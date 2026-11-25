@@ -792,9 +792,9 @@ const IND = [
 const indMeta = n => IND.find(x=>x[0]===n);
 const paneOf = n => indMeta(n)[2] ? 'candle_pane' : 'pane_'+n;
 const MA_IND=['LMA','MA','EMA','SMA','BOLL','BBI','AVP','SAR'];
-function addInd(o){ const m=indMeta(o.name); if (!m) return; const ci={name:o.name, paneId:paneOf(o.name)}; if (MA_IND.includes(o.name) && LS.get('maHidden',false)) ci.visible=false;
+function addInd(o){ const m=indMeta(o.name); if (!m) return; const ci={name:o.name, paneId:paneOf(o.name)}; if (MA_IND.includes(o.name) && LS.get('maHidden',false)) return;
   const p = o.params && o.params.length ? o.params : m[3]; if (p.length) ci.calcParams=p; chart.createIndicator(ci, !!m[2]) }
-function setMaHidden(h){ LS.set('maHidden',h); for (const o of state.inds) if (MA_IND.includes(o.name)) chart.overrideIndicator({name:o.name, paneId:'candle_pane', visible:!h});
+function setMaHidden(h){ LS.set('maHidden',h); for (const o of state.inds) if (MA_IND.includes(o.name)){ rmInd(o.name); if (!h) addInd(o) }
   const b=$('#maEye'); if (b){ b.classList.toggle('off',h); b.innerHTML=SV('<path d="'+(h?EYE_OFF:EYE_OPEN)+'"/>')+'<span>MA</span>' } toast(h?'MA skriti':'MA prikazani') }
 function rmInd(n){ if (indMeta(n)) chart.removeIndicator({name:n, paneId:paneOf(n)}) }
 const saveInds = () => LS.set('inds2', state.inds);
@@ -1025,7 +1025,7 @@ $('#k').addEventListener('contextmenu', e => {
     if (ovCtx){ ovCtx=null;
       openPopAt(e.clientX, e.clientY, item('del','Izbriši',ICON.trash,0,'Del')+item('lock','Zakleni / odkleni',ICON.lock)+item('clone','Kloniraj',ICON.clone), v=>dtbAction(v, dtb)); return }
     openPopAt(e.clientX, e.clientY,
-      item('alarm','Dodaj alarm na tej ceni',SV('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/>'))+item('reset','Ponastavi pogled grafa','',0,'Alt+R')+item('copy','Kopiraj ceno','')+'<hr>'+item('ind','Indikatorji …','',0,'/')+item('sym','Zamenjaj simbol …','')+'<hr>'+item('rmd','Odstrani risbe',ICON.trash)+item('rmi','Odstrani indikatorje',ICON.trash),
+      item('reset','Ponastavi pogled grafa',SV('<path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v5h5"/>'),0,'Alt+R')+item('alarm','Dodaj alarm na tej ceni',SV('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/>'))+item('copy','Kopiraj ceno','')+'<hr>'+item('ind','Indikatorji …','',0,'/')+item('sym','Zamenjaj simbol …','')+'<hr>'+item('rmd','Odstrani risbe',ICON.trash)+item('rmi','Odstrani indikatorje',ICON.trash),
       v=>{ if (v==='alarm'){ const r=$('#k').getBoundingClientRect(); const pp=chart.convertFromPixel([{x:e.clientX-r.left,y:e.clientY-r.top}],{paneId:'candle_pane'}); const val=(Array.isArray(pp)?pp[0]:pp).value; const q=quote(symOf(state.sym)); if (val!=null) newAlert(state.sym, +val.toFixed(q.pp)) } if (v==='reset') resetView(); if (v==='ind') indDialog(); if (v==='sym') symbolSearch();
         if (v==='copy'){ const r=$('#k').getBoundingClientRect(); const p=chart.convertFromPixel([{x:e.clientX-r.left,y:e.clientY-r.top}],{paneId:'candle_pane'}); const val=(Array.isArray(p)?p[0]:p).value;
           if (val!=null) navigator.clipboard.writeText(val.toFixed(2)).then(()=>toast('Kopirano: '+val.toFixed(2)),()=>toast('Kopiranje ni uspelo')) }
