@@ -102,6 +102,17 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #dtb button{height:32px;padding:0 8px}
 #dtb .sw{width:18px;height:18px;border-radius:3px;border:1px solid #fff4}
 #toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);background:var(--pop);padding:8px 14px;border-radius:6px;display:none;z-index:60;box-shadow:0 4px 18px #000a}
+#optCard{position:absolute;left:8px;top:34px;z-index:20;background:rgba(19,23,34,0.92);border:1px solid #2a2e39;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;max-width:330px;box-shadow:0 4px 14px #0008}
+#optCard .oh{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+#optCard .oh button{padding:2px 6px;font-size:14px}
+#optCard.min>*:not(.oh){display:none}
+#optCard .oh{cursor:pointer}
+#optCard .om{color:#9598a1;font-size:11px}
+#optCard table{border-collapse:collapse;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+#optCard th{color:#9598a1;font-weight:400;text-align:left;padding:0 8px 0 0;font-size:11px}
+#optCard td{padding:0 8px 0 0;white-space:nowrap}
+#app.optmode #optBtn{background:#2962ff;color:#fff}
+@media(max-width:900px){#optCard{top:6px;left:6px;font-size:11px;max-width:calc(100% - 70px);padding:6px 8px}}
 #tpad{position:absolute;inset:0;z-index:24;touch-action:none}
 #tpad .tpx{position:absolute;left:0;right:0;height:0;border-top:1px dashed #9598a1}
 #tpad .tpy{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed #9598a1}
@@ -124,7 +135,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   .monly{display:flex!important}
   #app,#app.nowl{grid-template-rows:65px minmax(0,1fr) 58px!important;grid-template-columns:minmax(0,1fr)!important}
   #top{grid-column:1/-1;border-bottom:1px solid var(--line);gap:0}
-  #top .vs,#tfFav,#tfMore,#redoBtn,#setBtn,#alertBtn,#fsBtn,#snap,#wlBtnM,#indBtn span{display:none!important}
+  #top .vs,#tfFav,#tfMore,#redoBtn,#setBtn,#alertBtn,#fsBtn,#snap,#wlBtnM,#indBtn span,#optBtn{display:none!important}
   #symBtn{min-width:0;padding:8px 12px;background:transparent;font-size:21.5px}
   #top button{padding:8px 11px}
   #top svg.i{width:27px;height:27px}
@@ -199,6 +210,8 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
     <div class="vs"></div>
     <button id="undoBtn" title="Razveljavi (Ctrl+Z)"><svg class="i" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-4"/></svg></button>
     <button id="redoBtn" title="Uveljavi (Ctrl+Y)"><svg class="i" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h4"/></svg></button>
+    <div class="vs"></div>
+    <button id="optBtn" title="Opcije: stožec pričakovanega gibanja + IV" style="font-weight:600">Opcije</button>
     <div class="grow"></div>
     <button id="alertBtn" title="Alarmi (Telegram)"><svg class="i" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/></svg></button>
     <button id="setBtn" title="Nastavitve"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
@@ -234,6 +247,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   <nav id="mnav" class="monly">
     <button data-tab="wl"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Watchlist</span></button>
     <button data-tab="chart" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M8 4v16M16 6v12"/><rect x="6" y="8" width="4" height="8"/><rect x="14" y="9" width="4" height="6"/></svg><span>Graf</span></button>
+    <button data-tab="opt"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span>Opcije</span></button>
     <button data-tab="search"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><span>Iskanje</span></button>
     <button data-tab="menu" data-popbtn="1"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Meni</span></button>
   </nav>
@@ -425,7 +439,7 @@ const loader = {
       const out = state.ct==='heikin' ? heikin(rawBars).slice(0, bars.length) : bars;
       if (type==='init'){ if (!bars.length) setStatus('Ni podatkov za '+s.id,'bad'); else { headerPrice(); updateStatus() } }
       callback(out, {forward: !noMore && bars.length>0, backward:false});
-      if (type==='init') setTimeout(()=>{ restoreDrawings(); applyRange(); drawAlerts() }, 0);
+      if (type==='init') setTimeout(()=>{ if (OPT.on) optAfterLoad(); else { restoreDrawings(); applyRange(); drawAlerts() } }, 0);
     } catch(e){ setStatus('Napaka: '+(e.message||e)+' ('+s.id+')','bad'); callback([], false) }
   },
   subscribeBar: ({callback}) => {
@@ -600,6 +614,7 @@ klinecharts.registerIndicator({
 
 /* ---------- graf ---------- */
 const chart = klinecharts.init('k', {styles:'dark', timezone: state.tz, locale:'en-US'});
+window.__lc = () => ({chart, state});
 const isMob = () => matchMedia('(max-width:900px)').matches;
 function applyStyles(){
   const gc = state.grid ? '#1f2430' : 'rgba(0,0,0,0)', u=state.upC, d=state.dnC;
@@ -642,6 +657,7 @@ function updateStatus(){
   $('#info').textContent = s.name;
 }
 function load(){
+  if (OPT.on && state.sym!=='BTCUSD') optOff(false);
   const s = symOf(state.sym);
   let tf = tfOf(state.tf);
   if (!allowedTf(s, tf)){ state.tf = s.dvol ? '1h' : 'D'; tf = tfOf(state.tf) }
@@ -1144,8 +1160,121 @@ function setTab(t){ document.querySelectorAll('#mnav button').forEach(b=>b.class
   const a=$('#app'); if (t==='wl') a.classList.add('wlopen'); else a.classList.remove('wlopen') }
 $('#mnav').onclick = e => { const b=e.target.closest('[data-tab]'); if (!b) return; const t=b.dataset.tab;
   if (t==='search'){ setTab('chart'); symbolSearch(); return } if (t==='menu'){ moreMenu(b); return }
+  if (t==='opt'){ OPT.on ? optOff() : optOn(); return }
+  if (t==='chart' && OPT.on){ optOff(); setTab('chart'); return }
   setTab(t); setTimeout(()=>chart.resize(),0) };
 mq.addEventListener('change', ()=>{ applyStyles(); closePop() });
+
+/* ---------- OPCIJE: ločen BTC pogled (stožec pričakovanega gibanja + IV panel) ---------- */
+const OPT = {on:false, prev:null, exp:[], dv:new Map(), dvLast:null, S:null, timer:null};
+const MON = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+const expTs = code => { const m=/^(\d{1,2})([A-Z]{3})(\d{2})$/.exec(code); return m ? Date.UTC(2000+ +m[3], MON[m[2]], +m[1], 8) : null };
+const kfmt = v => v>=1e4 ? (v/1e3).toFixed(1)+'k' : fmt(v,0);
+function rvSeries(closes, n){ const out=closes.map(()=>null);
+  for (let i=n;i<closes.length;i++){ let s=0, s2=0; for (let j=i-n+1;j<=i;j++){ const r=Math.log(closes[j]/closes[j-1]); s+=r; s2+=r*r }
+    const m=s/n, v=(s2-n*m*m)/(n-1); out[i]=Math.sqrt(Math.max(v,0)*365)*100 } return out }
+klinecharts.registerIndicator({
+  name:'IVRV', shortName:'IV (DVOL) vs realizirana vol. 30d', precision:1, calcParams:[30],
+  figures:[{key:'iv', title:'DVOL: ', type:'line', styles:()=>({color:'#ff9800', size:2})},{key:'rv', title:'RV30: ', type:'line', styles:()=>({color:'#2962ff', size:2})}],
+  calc: (list, ind) => { const rv=rvSeries(list.map(k=>k.close), ind.calcParams[0]||30);
+    return list.map((k,i)=>({iv: OPT.dv.get(Math.floor(k.timestamp/864e5)) ?? (i===list.length-1 ? OPT.dvLast : null), rv: rv[i]})) }
+});
+klinecharts.registerIndicator({
+  name:'OPTRNG', shortName:'', series:'price', precision:0, calcParams:[],
+  figures:[{key:'hi', type:'line', styles:()=>({color:'rgba(0,0,0,0)', size:0})},{key:'lo', type:'line', styles:()=>({color:'rgba(0,0,0,0)', size:0})}],
+  calc: list => list.map((k,i)=> i===list.length-1 && OPT.rng ? {hi:OPT.rng[0], lo:OPT.rng[1]} : {}),
+  createTooltipDataSource: () => ({name:'', calcParamsText:'', values:[], features:[], icons:[]})
+});
+reg({ name:'ivCone', totalStep:2, needDefaultPointFigure:false,
+  createPointFigures: ({chart, overlay}) => {
+    const d=overlay.extendData; if (!d || !d.nodes || !d.nodes.length) return [];
+    const P=(t,v)=>{ const r=chart.convertToPixel([{timestamp:t,value:v}],{paneId:'candle_pane'}); return Array.isArray(r)?r[0]:r };
+    const pts=k=>[P(d.t0,d.S), ...d.nodes.map(n=>P(n.ts,n[k]))];
+    const u1=pts('u1'), l1=pts('l1'), u2=pts('u2'), l2=pts('l2'), figs=[];
+    figs.push({type:'polygon', attrs:{coordinates:[...u2, ...l2.slice().reverse()]}, styles:{style:'fill', color:'rgba(41,98,255,0.06)'}, ignoreEvent:true});
+    figs.push({type:'polygon', attrs:{coordinates:[...u1, ...l1.slice().reverse()]}, styles:{style:'fill', color:'rgba(41,98,255,0.16)'}, ignoreEvent:true});
+    for (const [c,col,dash] of [[u1,'#2962ff',0],[l1,'#2962ff',0],[u2,'#787b86',1],[l2,'#787b86',1]])
+      figs.push({type:'line', attrs:{coordinates:c}, styles:{color:col, size:dash?1:1.5, style:dash?'dashed':'solid', dashedValue:[4,4]}, ignoreEvent:true});
+    d.nodes.forEach((n,i)=>{ if (!n.lab) return; const a=u1[i+1], b=l1[i+1];
+      figs.push({type:'line', attrs:{coordinates:[{x:a.x,y:u2[i+1].y},{x:a.x,y:l2[i+1].y}]}, styles:{color:'rgba(255,152,0,0.5)', size:1, style:'dashed', dashedValue:[2,3]}, ignoreEvent:true});
+      figs.push({type:'text', attrs:{x:a.x, y:u2[i+1].y-4, text:n.lab+' ±'+n.pct.toFixed(1)+'%', align:'center', baseline:'bottom'}, styles:{...lbl('#ff9800'), color:'#000', size:10}, ignoreEvent:true});
+      figs.push({type:'text', attrs:{x:a.x, y:a.y-2, text:kfmt(n.u1), align:'center', baseline:'bottom'}, styles:{color:'#82a6ff', size:10, backgroundColor:'transparent'}, ignoreEvent:true});
+      figs.push({type:'text', attrs:{x:b.x, y:b.y+2, text:kfmt(n.l1), align:'center', baseline:'top'}, styles:{color:'#82a6ff', size:10, backgroundColor:'transparent'}, ignoreEvent:true}) });
+    return figs;
+  }
+});
+async function optData(){
+  const now=Date.now();
+  const [book, dv] = await Promise.all([
+    rpc('public/get_book_summary_by_currency',{currency:'BTC', kind:'option'}),
+    rpc('public/get_volatility_index_data',{currency:'BTC', start_timestamp:now-400*864e5, end_timestamp:now, resolution:'1D'})
+  ]);
+  OPT.dv = new Map((dv.data||[]).map(d=>[Math.floor(d[0]/864e5), d[4]]));
+  const dvs=(dv.data||[]).filter(d=>d[0]>=now-365*864e5).map(d=>d[4]); OPT.dvLast = dvs.length ? dvs[dvs.length-1] : null;
+  OPT.dvStats = dvs.length ? {cur:OPT.dvLast, min:Math.min(...dvs), max:Math.max(...dvs), pct: dvs.filter(v=>v<OPT.dvLast).length/dvs.length*100} : null;
+  // ATM IV za vsako expiry: interpolacija med strikeoma okoli underlying cene (povprečje call+put)
+  const by = {};
+  for (const o of book||[]){ const p=o.instrument_name.split('-'); if (p.length!==4 || o.mark_iv==null) continue; const t=expTs(p[1]); if (!t || t<=now) continue;
+    const e = by[p[1]] = by[p[1]] || {code:p[1], ts:t, F:o.underlying_price, k:{}}; const K=+p[2]; (e.k[K]=e.k[K]||[]).push(o.mark_iv) }
+  OPT.exp = Object.values(by).map(e=>{ const Ks=Object.keys(e.k).map(Number).sort((a,b)=>a-b); const iv=K=>e.k[K].reduce((a,b)=>a+b,0)/e.k[K].length;
+    let lo=Ks.filter(K=>K<=e.F).pop(), hi=Ks.find(K=>K>=e.F); if (lo==null) lo=hi; if (hi==null) hi=lo;
+    const atm = lo===hi ? iv(lo) : iv(lo)+(iv(hi)-iv(lo))*(e.F-lo)/(hi-lo);
+    const d=new Date(e.ts); return {...e, atm, days:(e.ts-now)/864e5, fri:d.getUTCDay()===5} }).sort((a,b)=>a.ts-b.ts);
+}
+function optDraw(){
+  const L=chart.getDataList(); if (!L.length || !OPT.exp.length) return;
+  const last=L[L.length-1], S=last.close, now=Date.now(); OPT.S=S;
+  const fr=OPT.exp.filter(e=>e.fri && e.days<=95);
+  const lastFri = e => { const d=new Date(e.ts); return new Date(e.ts+7*864e5).getUTCMonth()!==d.getUTCMonth() };
+  const labs=new Set(); fr.slice(0,2).forEach(e=>labs.add(e.code)); fr.filter(lastFri).slice(0,3).forEach(e=>labs.add(e.code));
+  const nodes=fr.map(e=>{ const s=e.atm/100*Math.sqrt(e.days/365); const d=new Date(e.ts);
+    return {ts:e.ts, u1:S*Math.exp(s), l1:S*Math.exp(-s), u2:S*Math.exp(2*s), l2:S*Math.exp(-2*s), pct:(Math.exp(s)-1)*100,
+      lab: labs.has(e.code) ? d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.' : null} });
+  OPT.rng=[Math.max(...nodes.map(n=>n.u1))*1.02, Math.min(...nodes.map(n=>n.l1))*0.98];
+  chart.removeIndicator({name:'OPTRNG', paneId:'candle_pane'}); chart.createIndicator({name:'OPTRNG', paneId:'candle_pane'}, true);
+  chart.removeOverlay({groupId:'opt'});
+  chart.createOverlay({name:'ivCone', groupId:'opt', lock:true, points:[{timestamp:last.timestamp, value:S},{timestamp:last.timestamp, value:S}], extendData:{t0:last.timestamp, S, nodes}});
+  optCard(fr, labs);
+}
+function optCard(fr, labs){
+  let c=$('#optCard'); if (!c){ c=document.createElement('div'); c.id='optCard'; $('#chart').appendChild(c) }
+  const st=OPT.dvStats, S=OPT.S;
+  const rvNow = (()=>{ const L=chart.getDataList(); const r=rvSeries(L.map(k=>k.close),30); return r[r.length-1] })();
+  const rank = st ? (st.cur-st.min)/(st.max-st.min)*100 : null, prem = st && rvNow!=null ? st.cur-rvNow : null;
+  const lvl = st==null ? '—' : st.pct>=70 ? '<b style="color:#f23645">VISOKA</b>' : st.pct<=30 ? '<b style="color:#089981">NIZKA</b>' : '<b style="color:#ffb74d">SREDNJA</b>';
+  const rows = fr.filter(e=>labs.has(e.code)).map(e=>{ const s=e.atm/100*Math.sqrt(e.days/365), d=new Date(e.ts);
+    return '<tr><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.</td><td>'+Math.round(e.days)+'d</td><td>'+e.atm.toFixed(1)+'%</td><td>'+kfmt(S*Math.exp(-s))+' – '+kfmt(S*Math.exp(s))+'</td></tr>' }).join('');
+  c.innerHTML='<div class="oh"><b>Opcije · BTC'+(st?' · DVOL '+st.cur.toFixed(1):'')+' ▾</b><button id="optX" title="Zapri">✕</button></div>'+
+    (st ? '<div>DVOL <b>'+st.cur.toFixed(1)+'</b> · IV je '+lvl+'</div><div class="om">IV rank '+rank.toFixed(0)+'% · percentil '+st.pct.toFixed(0)+'% (1 leto: '+st.min.toFixed(0)+'–'+st.max.toFixed(0)+')</div>' : '')+
+    (rvNow!=null ? '<div>RV30 <b>'+rvNow.toFixed(1)+'</b> · premija IV−RV <b style="color:'+(prem>=0?'#089981':'#f23645')+'">'+(prem>=0?'+':'')+prem.toFixed(1)+'</b></div>' : '')+
+    '<table><tr><th>Expiry</th><th></th><th>ATM IV</th><th>±1σ (68%)</th></tr>'+rows+'</table>'+
+    '<div class="om">Modro polje = ±1σ, črtkano = ±2σ (95%) · Deribit mark IV</div>';
+  $('#optX').onclick=e=>{ e.stopPropagation(); optOff() }; c.querySelector('.oh').onclick=()=>{ c.classList.toggle('min'); LS.set('optMin', c.classList.contains('min')) };
+  c.classList.toggle('min', !!LS.get('optMin', isM()));
+}
+async function optRefresh(){ try { await optData(); optDraw(); if (OPT.on){ chart.removeIndicator({name:'IVRV', paneId:'pane_IVRV'}); chart.createIndicator({name:'IVRV', paneId:'pane_IVRV'}, false, {height: isM()?120:150}) } } catch(e){ toast('Opcije: '+(e.message||e)) } }
+function optFit(){
+  const fr=OPT.exp.filter(e=>e.fri && e.days<=95); const D=fr.length ? Math.ceil(fr[fr.length-1].days)+2 : 30;
+  const sz=chart.getSize('candle_pane','main'), W=(sz&&sz.width)||600; const bs=Math.max(1.5, Math.min(12, W/(D+(isM()?60:150))));
+  chart.setBarSpace(bs); chart.setOffsetRightDistance(D*bs+20); chart.scrollToRealTime();
+}
+async function optAfterLoad(){ chart.removeOverlay({groupId:'d'}); chart.removeOverlay({groupId:'alerts'}); await optRefresh(); optFit() }
+function optOn(){
+  if (OPT.on) return; closePop(); closeModal(); cancelTool(true);
+  OPT.prev={sym:state.sym, tf:state.tf}; OPT.on=true; $('#app').classList.add('optmode');
+  for (const o of state.inds) rmInd(o.name);
+  state.sym='BTCUSD'; state.tf='D'; load(); LS.set('sym2',OPT.prev.sym); LS.set('tf',OPT.prev.tf);
+  OPT.timer=setInterval(optRefresh, 5*60*1000);
+  document.querySelectorAll('#mnav button').forEach(b=>b.classList.toggle('on', b.dataset.tab==='opt')); $('#app').classList.remove('wlopen');
+}
+function optOff(reload=true){
+  if (!OPT.on) return; OPT.on=false; clearInterval(OPT.timer); $('#app').classList.remove('optmode');
+  chart.removeOverlay({groupId:'opt'}); chart.removeIndicator({name:'IVRV', paneId:'pane_IVRV'}); chart.removeIndicator({name:'OPTRNG', paneId:'candle_pane'}); const c=$('#optCard'); if (c) c.remove();
+  for (const o of state.inds) addInd(o);
+  document.querySelectorAll('#mnav button').forEach(b=>b.classList.toggle('on', b.dataset.tab==='chart'));
+  if (reload){ state.sym=OPT.prev.sym; state.tf=OPT.prev.tf; load(); resetView(true) }
+}
+$('#optBtn').onclick = () => OPT.on ? optOff() : optOn();
 
 /* ---------- tipkovnica ---------- */
 document.addEventListener('keydown', e => {
