@@ -220,7 +220,7 @@ def main():
                     "lastBar": int(pd.Timestamp(latest.index[-1]).timestamp() * 1000)}
             if used in ext:
                 info["ext"] = ext[used]
-            print(f"  + {sid:8} {used:10} {info['last']} ({info['chg']}%)")
+            print(f"  + {sid:8} {used:10} {info['last']} ({info['chg']}%) od {pd.Timestamp(d.index[0]).date()}")
         else:
             print(f"  - {sid:8} ni podatkov (kandidati: {it.get('y') or it.get('ratio') or 'brez'})")
         meta["symbols"][sid] = info
