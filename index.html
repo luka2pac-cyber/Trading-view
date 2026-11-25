@@ -102,6 +102,12 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #dtb button{height:32px;padding:0 8px}
 #dtb .sw{width:18px;height:18px;border-radius:3px;border:1px solid #fff4}
 #toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);background:var(--pop);padding:8px 14px;border-radius:6px;display:none;z-index:60;box-shadow:0 4px 18px #000a}
+#tpad{position:absolute;inset:0;z-index:24;touch-action:none}
+#tpad .tpx{position:absolute;left:0;right:0;height:0;border-top:1px dashed #9598a1}
+#tpad .tpy{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed #9598a1}
+#tpad .tpd{position:absolute;width:9px;height:9px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px #2962ff}
+#tpad .tpl{position:absolute;right:0;transform:translateY(-50%);background:#2962ff;color:#fff;font-size:12px;padding:3px 6px;border-radius:3px;font-variant-numeric:tabular-nums}
+#tpad .tpc{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#1e222d;color:#fff;border-radius:20px;padding:10px 18px;font-size:15px;box-shadow:0 2px 10px #000a}
 #hint{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:var(--acc);color:#fff;padding:5px 12px;border-radius:4px;font-size:12px;display:none;z-index:25;pointer-events:none;white-space:nowrap}
 .monly{display:none!important}
 #fab{position:absolute;right:62px;bottom:14px;z-index:20;width:46px;height:46px;border-radius:50%;background:#2a2e39;justify-content:center;box-shadow:0 4px 14px #000a}
@@ -116,16 +122,20 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 .tgrid .it.on{background:#2962ff22}
 @media(max-width:900px){
   .monly{display:flex!important}
-  #app,#app.nowl{grid-template-rows:48px minmax(0,1fr) 58px!important;grid-template-columns:minmax(0,1fr)!important}
+  #app,#app.nowl{grid-template-rows:65px minmax(0,1fr) 58px!important;grid-template-columns:minmax(0,1fr)!important}
   #top{grid-column:1/-1;border-bottom:1px solid var(--line);gap:0}
   #top .vs,#tfFav,#tfMore,#redoBtn,#setBtn,#alertBtn,#fsBtn,#snap,#wlBtnM,#indBtn span{display:none!important}
-  #symBtn{min-width:0;padding:6px 10px;background:transparent;font-size:16px}
+  #symBtn{min-width:0;padding:8px 12px;background:transparent;font-size:21.5px}
+  #top button{padding:8px 11px}
+  #top svg.i{width:27px;height:27px}
+  #mTf{font-size:18px}
+  #mMore{font-size:27px!important}
   #symBtn svg{display:none}
-  #price{font-size:13px}#chg{font-size:12px}
+  #price{font-size:17.5px}#chg{font-size:16px}
   #left,#bottom,#bottomL,#bottomR,#rstrip{display:none!important}
   #chart{grid-column:1/-1;grid-row:2;border-radius:0}
   #mnav{grid-column:1/-1;grid-row:3}
-  #wl{position:fixed!important;top:48px!important;bottom:58px!important;left:0;right:0;width:auto!important;z-index:35;border-radius:0!important;margin:0!important;box-shadow:none!important}
+  #wl{position:fixed!important;top:65px!important;bottom:58px!important;left:0;right:0;width:auto!important;z-index:35;border-radius:0!important;margin:0!important;box-shadow:none!important}
   #dtb{top:auto;bottom:70px}
   /* --- watchlist kot TradingView mobilna aplikacija --- */
   #app{--bg:#000}
@@ -849,9 +859,58 @@ function startTool(n){
   if (n==='simpleAnnotation'||n==='simpleTag'||n==='textBox'){ const t=prompt('Besedilo:',''); if (t===null){ renderLeft(); return } extra.extendData=t||'Besedilo' }
   tool=n; renderLeft(); hint(HINTS[n]||'');
   snapshot();
+  if (isM() && !TP_SKIP.has(n)){ tpStart(n, extra); return }
   drawingId = chart.createOverlay({name:n, groupId:'d', mode: state.magnet==='off'?'normal':state.magnet==='weak'?'weak_magnet':'strong_magnet', styles:lineStyle(state.color), ...extra, ...evts});
 }
+/* ---------- risanje na telefonu kot v TradingView: križec premikaš s prstom, tap = točka ---------- */
+const TP_SKIP = new Set(['brush']);
+let TP = null;
+function tpNeed(n){ try { const C=klinecharts.getOverlayClass(n); const o=new C(); return Math.max(1,(o.totalStep||2)-1) } catch(e){ return 2 } }
+function tpPoint(){
+  const p = chart.convertFromPixel([{x:TP.x, y:TP.y}], {paneId:'candle_pane'}); let pt = Array.isArray(p)?p[0]:p;
+  if (!pt || pt.timestamp==null){ const L=chart.getDataList(); const i=Math.max(0,Math.min(L.length-1, pt&&pt.dataIndex!=null?pt.dataIndex:L.length-1)); pt={...pt, timestamp:L[i]&&L[i].timestamp, dataIndex:i} }
+  if (state.magnet!=='off'){ const b=chart.getDataList()[pt.dataIndex]; if (b){ const c=[b.open,b.high,b.low,b.close]; let best=c[0]; for (const v of c) if (Math.abs(v-pt.value)<Math.abs(best-pt.value)) best=v;
+    const yb=chart.convertToPixel([{timestamp:pt.timestamp, value:best}],{paneId:'candle_pane'}); const yy=(Array.isArray(yb)?yb[0]:yb).y;
+    if (state.magnet==='strong' || Math.abs(yy-TP.y)<30) pt.value=best } }
+  return {timestamp:pt.timestamp, dataIndex:pt.dataIndex, value:pt.value};
+}
+function tpRender(){
+  const L=TP.el; L.querySelector('.tpx').style.top=TP.y+'px'; L.querySelector('.tpy').style.left=TP.x+'px';
+  const d=L.querySelector('.tpd'); d.style.left=TP.x+'px'; d.style.top=TP.y+'px';
+  const pt=tpPoint(), q=quote(symOf(state.sym)), lb=L.querySelector('.tpl'); lb.textContent=(+pt.value).toFixed(q.pp); lb.style.top=TP.y+'px';
+  if (TP.pts.length){ const pts=[...TP.pts]; while (pts.length<TP.need) pts.push(pt);
+    if (TP.id) chart.overrideOverlay({id:TP.id, points:pts});
+    else { TP.id=chart.createOverlay({name:TP.name, groupId:'d', lock:true, points:pts, styles:lineStyle(state.color), ...(TP.extra||{})}); drawingId=TP.id } }
+}
+function tpHint(){ hint(TP.need===1 ? 'Premikaj prst kjerkoli · tapni za postavitev' : 'Premikaj prst kjerkoli · tapni za točko '+(TP.pts.length+1)+' od '+TP.need) }
+function tpStart(n, extra){
+  const k=$('#k'), r=k.getBoundingClientRect(), sz=chart.getSize('candle_pane','main');
+  const W=(sz&&sz.width)||r.width-60, H=(sz&&sz.height)||r.height*0.7;
+  const L=document.createElement('div'); L.id='tpad';
+  L.innerHTML='<div class="tpx"></div><div class="tpy"></div><div class="tpd"></div><div class="tpl"></div><button class="tpc">✕ Prekliči</button>';
+  $('#chart').appendChild(L);
+  TP={name:n, extra, need:tpNeed(n), pts:[], id:null, el:L, x:W/2, y:H/2, W, H};
+  let st=null;
+  L.addEventListener('pointerdown', e=>{ if (e.target.closest('.tpc')) return; e.preventDefault(); L.setPointerCapture(e.pointerId); st={id:e.pointerId, x0:e.clientX, y0:e.clientY, lx:e.clientX, ly:e.clientY, t:Date.now(), moved:0} });
+  L.addEventListener('pointermove', e=>{ if (!st||e.pointerId!==st.id) return; e.preventDefault();
+    const dx=e.clientX-st.lx, dy=e.clientY-st.ly; st.lx=e.clientX; st.ly=e.clientY; st.moved+=Math.abs(dx)+Math.abs(dy);
+    TP.x=Math.max(0,Math.min(TP.W-1,TP.x+dx)); TP.y=Math.max(0,Math.min(TP.H-1,TP.y+dy)); tpRender() });
+  const up=e=>{ if (!st||e.pointerId!==st.id) return; const tap = st.moved<10 && Date.now()-st.t<500; st=null; if (tap) tpTap() };
+  L.addEventListener('pointerup', up); L.addEventListener('pointercancel', ()=>{ st=null });
+  L.querySelector('.tpc').onclick=e=>{ e.stopPropagation(); cancelTool() };
+  tpRender(); tpHint();
+}
+function tpTap(){
+  TP.pts.push(tpPoint());
+  if (TP.pts.length<TP.need){ tpRender(); tpHint(); return }
+  const n=TP.name, pts=TP.pts, extra=TP.extra; if (TP.id) chart.removeOverlay({id:TP.id}); tpEnd();
+  chart.createOverlay({name:n, groupId:'d', points:pts, styles:lineStyle(state.color), ...(extra||{}), ...evts});
+  drawingId=null; saveDrawings(); hint('');
+  if (state.stay) startTool(n); else { tool=null; renderLeft() }
+}
+function tpEnd(){ if (!TP) return; if (TP.id && drawingId===TP.id) drawingId=null; TP.el.remove(); TP=null }
 function cancelTool(silent){
+  if (TP){ if (TP.id) chart.removeOverlay({id:TP.id}); tpEnd(); undoStack.pop() }
   if (drawingId){ const o=myOverlays().find(x=>x.id===drawingId); if (o && o.currentStep!==-1 && o.totalStep && o.currentStep < o.totalStep){ chart.removeOverlay({id:drawingId}); undoStack.pop() } drawingId=null }
   tool=null; hint(''); if (!silent) renderLeft();
 }
