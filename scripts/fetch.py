@@ -26,7 +26,7 @@ def download(tickers, interval):
         for attempt in range(3):
             try:
                 df = yf.download(chunk, period=INTERVALS[interval], interval=interval, group_by="ticker",
-                                 auto_adjust=False, actions=False, progress=False, threads=True)
+                                 auto_adjust=False, actions=False, progress=False, threads=False)
                 break
             except Exception as e:  # noqa
                 print(f"  ! download {interval} poskus {attempt + 1}: {e}")
