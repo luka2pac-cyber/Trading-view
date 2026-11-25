@@ -21,6 +21,16 @@
    "status": "active",
    "created": 1795639732262,
    "ref": 60030.32
+  },
+  {
+   "id": "S55HLZ",
+   "sym": "BTCUSD",
+   "price": 68557,
+   "op": "above",
+   "note": "",
+   "status": "active",
+   "created": 1795639750373,
+   "ref": 60021.63
   }
  ],
  "bot": "luka_charts_alarm_bot"
