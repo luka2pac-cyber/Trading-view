@@ -2,15 +2,13 @@ name: Posodobi podatke in objavi
 
 on:
   schedule:
-    - cron: "*/15 7-21 * * 1-5"   # med tednom 8:00-22:59 (CET) vsakih 15 min
-    - cron: "7 0-6,22,23 * * 1-5" # med tednom ponoči vsako uro
-    - cron: "17 */6 * * 0,6"      # vikend vsakih 6 ur
+    - cron: "*/15 * * * *"   # vsakih 15 min, vse dni (alarmi za BTC tudi ponoči in čez vikend)
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -28,6 +26,17 @@ jobs:
           python-version: "3.12"
       - run: pip install -U yfinance
       - run: python scripts/fetch.py
+      - id: alerts
+        run: python scripts/alerts.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      - if: steps.alerts.outputs.changed == 'true'
+        run: |
+          git config user.name "luka-charts-robot"
+          git config user.email "robot@users.noreply.github.com"
+          git add alerts.json
+          git commit -m "alarmi: posodobitev [skip ci]"
+          git pull --rebase origin main && git push origin HEAD:main
       - run: mkdir -p _site && cp index.html watchlist.json tv_drawings.json _site/ && cp -r data _site/ && sed -i "s/__BUILD__/${GITHUB_SHA}/" _site/index.html && echo "${GITHUB_SHA}" > _site/version.txt
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -118,7 +118,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   .monly{display:flex!important}
   #app,#app.nowl{grid-template-rows:48px minmax(0,1fr) 58px!important;grid-template-columns:minmax(0,1fr)!important}
   #top{grid-column:1/-1;border-bottom:1px solid var(--line);gap:0}
-  #top .vs,#tfFav,#tfMore,#redoBtn,#setBtn,#fsBtn,#snap,#wlBtnM,#indBtn span{display:none!important}
+  #top .vs,#tfFav,#tfMore,#redoBtn,#setBtn,#alertBtn,#fsBtn,#snap,#wlBtnM,#indBtn span{display:none!important}
   #symBtn{min-width:0;padding:6px 10px;background:transparent;font-size:16px}
   #symBtn svg{display:none}
   #price{font-size:13px}#chg{font-size:12px}
@@ -190,6 +190,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
     <button id="undoBtn" title="Razveljavi (Ctrl+Z)"><svg class="i" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-4"/></svg></button>
     <button id="redoBtn" title="Uveljavi (Ctrl+Y)"><svg class="i" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h4"/></svg></button>
     <div class="grow"></div>
+    <button id="alertBtn" title="Alarmi (Telegram)"><svg class="i" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/></svg></button>
     <button id="setBtn" title="Nastavitve"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
     <button id="fsBtn" title="Celozaslonski način"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
     <button id="snap" title="Posnetek grafa (PNG)"><svg class="i" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
@@ -414,7 +415,7 @@ const loader = {
       const out = state.ct==='heikin' ? heikin(rawBars).slice(0, bars.length) : bars;
       if (type==='init'){ if (!bars.length) setStatus('Ni podatkov za '+s.id,'bad'); else { headerPrice(); updateStatus() } }
       callback(out, {forward: !noMore && bars.length>0, backward:false});
-      if (type==='init') setTimeout(()=>{ restoreDrawings(); applyRange() }, 0);
+      if (type==='init') setTimeout(()=>{ restoreDrawings(); applyRange(); drawAlerts() }, 0);
     } catch(e){ setStatus('Napaka: '+(e.message||e)+' ('+s.id+')','bad'); callback([], false) }
   },
   subscribeBar: ({callback}) => {
@@ -908,8 +909,8 @@ $('#k').addEventListener('contextmenu', e => {
     if (ovCtx){ ovCtx=null;
       openPopAt(e.clientX, e.clientY, item('del','Izbriši',ICON.trash,0,'Del')+item('lock','Zakleni / odkleni',ICON.lock)+item('clone','Kloniraj',ICON.clone), v=>dtbAction(v, dtb)); return }
     openPopAt(e.clientX, e.clientY,
-      item('reset','Ponastavi pogled grafa','',0,'Alt+R')+item('copy','Kopiraj ceno','')+'<hr>'+item('ind','Indikatorji …','',0,'/')+item('sym','Zamenjaj simbol …','')+'<hr>'+item('rmd','Odstrani risbe',ICON.trash)+item('rmi','Odstrani indikatorje',ICON.trash),
-      v=>{ if (v==='reset') resetView(); if (v==='ind') indDialog(); if (v==='sym') symbolSearch();
+      item('alarm','Dodaj alarm na tej ceni',SV('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/>'))+item('reset','Ponastavi pogled grafa','',0,'Alt+R')+item('copy','Kopiraj ceno','')+'<hr>'+item('ind','Indikatorji …','',0,'/')+item('sym','Zamenjaj simbol …','')+'<hr>'+item('rmd','Odstrani risbe',ICON.trash)+item('rmi','Odstrani indikatorje',ICON.trash),
+      v=>{ if (v==='alarm'){ const r=$('#k').getBoundingClientRect(); const pp=chart.convertFromPixel([{x:e.clientX-r.left,y:e.clientY-r.top}],{paneId:'candle_pane'}); const val=(Array.isArray(pp)?pp[0]:pp).value; const q=quote(symOf(state.sym)); if (val!=null) newAlert(state.sym, +val.toFixed(q.pp)) } if (v==='reset') resetView(); if (v==='ind') indDialog(); if (v==='sym') symbolSearch();
         if (v==='copy'){ const r=$('#k').getBoundingClientRect(); const p=chart.convertFromPixel([{x:e.clientX-r.left,y:e.clientY-r.top}],{paneId:'candle_pane'}); const val=(Array.isArray(p)?p[0]:p).value;
           if (val!=null) navigator.clipboard.writeText(val.toFixed(2)).then(()=>toast('Kopirano: '+val.toFixed(2)),()=>toast('Kopiranje ni uspelo')) }
         if (v==='rmd'){ snapshot(); chart.removeOverlay({groupId:'d'}); saveDrawings(); closeDtb(); renderLeft() }
@@ -1037,7 +1038,7 @@ $('#mTf').onclick = e => { const s=symOf(state.sym);
   h += '<div class="hd">Obdobje</div><div class="tgrid">'+RANGES.map(r=>'<div class="it" data-v="R:'+r[0]+'"><b>'+r[0]+'</b></div>').join('')+'</div>';
   openPop(e.currentTarget, h, v=>{ if (v.startsWith('R:')){ const b=document.querySelector('#ranges [data-r="'+v.slice(2)+'"]'); if (b) b.click() } else { state.tf=v; load() } }) };
 function moreMenu(anchor){
-  const h = item('search','Iskanje simbola',SV('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>'))+
+  const h = item('search','Iskanje simbola',SV('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>'))+item('alarms','Alarmi (Telegram)',SV('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/>'))+
     item('ind','Indikatorji',SV('<path d="M3 17l5-6 4 4 8-9"/>'))+
     item('ct','Vrsta grafa',CTS.find(c=>c[0]===state.ct)[2])+'<hr>'+
     item('log','Logaritemska lestvica','',state.axis==='log')+item('pct','Odstotna lestvica','',state.axis==='pct')+item('lin','Navadna lestvica','',state.axis==='normal')+
@@ -1045,7 +1046,7 @@ function moreMenu(anchor){
     item('cross','Kazalec: križ',ICON.cross,state.cursor==='cross')+item('dot','Kazalec: pika',ICON.dot,state.cursor==='dot')+'<hr>'+
     item('tz','Časovni pas: '+(state.tz==='UTC'?'UTC':'Ljubljana'),'')+item('set','Nastavitve grafa','')+item('snap','Posnetek grafa','')+item('fs','Celozaslonski način','')+'<hr><div class="hd" style="text-transform:none">Verzija '+esc(BUILD.slice(0,7))+' · zaslon '+innerWidth+' px</div>';
   openPop(anchor, h, v=>{
-    if (v==='search') symbolSearch(); if (v==='ind') indDialog(); if (v==='ct') $('#ctBtn').click();
+    if (v==='search') symbolSearch(); if (v==='alarms') alertDialog(); if (v==='ind') indDialog(); if (v==='ct') $('#ctBtn').click();
     if (v==='log') setAxis('log'); if (v==='pct') setAxis('pct'); if (v==='lin') setAxis('normal'); if (v==='reset') resetView(true);
     if (v==='cross'||v==='dot') setCursor(v);
     if (v==='tz'){ state.tz = state.tz==='UTC'?'Europe/Ljubljana':'UTC'; chart.setTimezone(state.tz); LS.set('tz',state.tz); tick() }
@@ -1101,6 +1102,54 @@ document.addEventListener('keydown', e => {
   if (/^[a-z0-9]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && !modal.classList.contains('open')){ e.preventDefault(); symbolSearch(e.key.toUpperCase()); $('#ssq').dispatchEvent(new Event('input')) }
 });
 
+
+/* ---------- alarmi (Telegram bot + GitHub robot) ---------- */
+let ALERTS = {bot:null, connected:false, alerts:[]};
+const b64u = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const pendingA = () => LS.get('pendingAlerts', []).filter(p => Date.now()-p.t < 3600e3);
+async function loadAlerts(){ try { const r=await fetch('data/alerts.json?t='+Date.now(),{cache:'no-store'}); if (r.ok){ ALERTS=await r.json();
+  LS.set('pendingAlerts', pendingA().filter(p=>!ALERTS.alerts.some(a=>a.sym===p.sym && Math.abs(a.price-p.price)<1e-9))) } } catch(e){} drawAlerts() }
+function drawAlerts(){
+  try { chart.removeOverlay({groupId:'alerts'}) } catch(e){}
+  const list=[...ALERTS.alerts.filter(a=>a.status==='active').map(a=>({sym:a.sym, price:a.price, note:a.note})), ...pendingA().map(p=>({sym:p.sym, price:p.price, note:'čaka na robota'}))];
+  const last = chart.getDataList().slice(-1)[0]; if (!last) return;
+  for (const a of list){ if (a.sym!==state.sym) continue;
+    chart.createOverlay({name:'horizontalStraightLine', groupId:'alerts', lock:true, points:[{timestamp:last.timestamp, value:a.price}],
+      styles:{line:{color:'#ff9800',size:1,style:'dashed',dashedValue:[4,4]}, point:{color:'transparent',borderColor:'transparent',activeColor:'transparent',activeBorderColor:'transparent'}}}) }
+}
+function tgLink(start){ return ALERTS.bot ? 'https://t.me/'+ALERTS.bot+'?start='+start : null }
+function newAlert(sym, price){
+  const link = tgLink('A_'+b64u(sym+'|'+price));
+  if (!link){ alertDialog(); return }
+  const pa=pendingA(); pa.push({sym, price, t:Date.now()}); LS.set('pendingAlerts', pa); drawAlerts();
+  window.open(link, '_blank') || (location.href = link);
+  toast('V Telegramu pritisni START – alarm bo aktiven v ~15 min');
+}
+function alertDialog(){
+  const s=symOf(state.sym), q=quote(s);
+  let h='<header>Alarmi<button data-x>✕</button></header>';
+  if (!ALERTS.bot){
+    h+='<div class="frm" style="grid-template-columns:1fr;line-height:1.5">Telegram bot še ni povezan.<br>1) V Telegramu odpri <b>@BotFather</b> → <code>/newbot</code> → dobiš <b>token</b>.<br>2) GitHub → repozitorij <b>Trading-view</b> → Settings → Secrets and variables → Actions → <b>New repository secret</b>: ime <code>TELEGRAM_TOKEN</code>, vrednost = token.<br>3) Svojemu botu pošlji <code>/start</code>. V ~15 min ti odgovori in alarmi delujejo.</div>';
+  } else {
+    h+='<div class="frm"><label for="aPrice">Nov alarm za <b>'+esc(s.id)+'</b> (zdaj '+fmt(q.last,q.pp)+')</label><span></span>'+
+       '<input type="text" id="aPrice" inputmode="decimal" value="'+esc(q.last!=null?(+q.last).toFixed(q.pp):'')+'" style="width:100%"><button id="aAdd" style="background:#2962ff;color:#fff">Nastavi v Telegramu</button></div>';
+    h+='<div class="sec">Aktivni</div><div class="body">';
+    const act=ALERTS.alerts.filter(a=>a.status==='active'), pend=pendingA();
+    if (!act.length && !pend.length) h+='<div class="li" style="cursor:default"><small>Ni aktivnih alarmov.</small></div>';
+    for (const a of act) h+='<div class="li" style="cursor:default"><div><b>'+esc(a.sym)+'</b> '+(a.op==='above'?'⬆️':'⬇️')+' '+esc(a.price)+(a.note?' <small>'+esc(a.note)+'</small>':'')+'</div><div class="act"><button data-go="'+esc(a.sym)+'">Graf</button><button data-del="'+esc(a.id)+'" title="Izbriši">✕</button></div></div>';
+    for (const p of pend) h+='<div class="li" style="cursor:default"><div><b>'+esc(p.sym)+'</b> '+esc(p.price)+' <small>čaka na robota (≤15 min)</small></div><span></span></div>';
+    const trig=ALERTS.alerts.filter(a=>a.status==='triggered').slice(-10).reverse();
+    if (trig.length){ h+='</div><div class="sec">Sproženi</div><div class="body">'; for (const a of trig) h+='<div class="li" style="cursor:default"><div><b>'+esc(a.sym)+'</b> '+esc(a.price)+'</div><small>'+new Date(a.triggered).toLocaleString('sl-SI')+'</small></div>' }
+    h+='</div><div class="sec" style="text-transform:none">Alarme lahko nastaviš tudi direktno botu: <code>/alarm BTCUSD 60000 opomba</code>, seznam: /alarmi</div>';
+  }
+  openModal(h);
+  const add=$('#aAdd'); if (add) add.onclick=()=>{ const v=parseFloat(($('#aPrice').value||'').replace(',','.')); if (!(v>0)) return toast('Vpiši ceno'); closeModal(); newAlert(s.id, v) };
+  dlg.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const l=tgLink('D_'+b64u(b.dataset.del)); if (l){ window.open(l,'_blank') || (location.href=l); toast('V Telegramu pritisni START za brisanje') } });
+  dlg.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ closeModal(); pick(b.dataset.go) });
+}
+$('#alertBtn').onclick = alertDialog;
+setInterval(loadAlerts, 120000);
+
 /* ---------- samodejna posodobitev, ko izide nova verzija ---------- */
 const BUILD = '__BUILD__';
 async function checkVersion(){ if (BUILD.startsWith('__')) return;
@@ -1108,7 +1157,7 @@ async function checkVersion(){ if (BUILD.startsWith('__')) return;
 setInterval(checkVersion, 120000); document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) checkVersion() });
 /* ---------- start ---------- */
 (async () => {
-  checkVersion();
+  checkVersion(); loadAlerts();
   renderCt(); renderLeft(); connect();
   try { const r = await fetch('watchlist.json?t='+Date.now()); WL = await r.json() }
   catch(e){ WL = [{group:'Glavno', items:[{id:'BTCUSD',src:'deribit',inst:'BTC-PERPETUAL',name:'BTC perp (Deribit)'},{id:'DVOL',src:'deribit',inst:'DVOL:BTC',name:'BTC DVOL (Deribit)'}]}] }
