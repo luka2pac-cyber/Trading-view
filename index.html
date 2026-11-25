@@ -633,6 +633,14 @@ klinecharts.registerIndicator({
 /* ---------- graf ---------- */
 const chart = klinecharts.init('k', {styles:'dark', timezone: state.tz, locale:'en-US'});
 window.__lc = () => ({chart, state});
+// mehkejši zoom s kolescem/touchpadom (privzeti je bil prehiter, posebej na touchpadu in v Firefoxu)
+$('#k').addEventListener('wheel', e => {
+  if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+  e.preventDefault(); e.stopPropagation();
+  let dy = e.deltaY * (e.deltaMode===1 ? 32 : e.deltaMode===2 ? 800 : 1);
+  const f = Math.max(0.88, Math.min(1.14, Math.exp(-dy*0.0008)));
+  const r = $('#k').getBoundingClientRect(); chart.zoomAtCoordinate(f, {x:e.clientX-r.left, y:e.clientY-r.top});
+}, {capture:true, passive:false});
 const isMob = () => matchMedia('(max-width:900px)').matches;
 function applyStyles(){
   const gc = state.grid ? '#1f2430' : 'rgba(0,0,0,0)', u=state.upC, d=state.dnC;
