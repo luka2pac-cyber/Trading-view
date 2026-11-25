@@ -174,6 +174,7 @@ const toast = t => { const el=$('#toast'); el.textContent=t; el.style.display='b
 const fmt = (v, pp) => v==null||isNaN(v) ? '—' : Number(v).toLocaleString('en-US',{minimumFractionDigits:pp,maximumFractionDigits:pp});
 const ppFor = v => v==null ? 2 : Math.abs(v) < 5 ? 4 : Math.abs(v) < 50 ? 3 : 2;
 const agoTxt = ms => { const m=Math.round((Date.now()-ms)/6e4); return m<1?'pravkar':m<60?m+' min nazaj':m<1440?Math.round(m/60)+' h nazaj':Math.round(m/1440)+' dni nazaj' };
+const hexA = (h, a) => { const n=parseInt(h.slice(1),16); return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+(a/100)+')' };
 const SV = p => '<svg class="i" viewBox="0 0 24 24">'+p+'</svg>';
 
 /* ---------- intervali ---------- */
@@ -193,13 +194,15 @@ const TFS = [
 ];
 const FAV = ['15m','1h','4h','D','W','M'];
 const tfOf = k => TFS.find(t=>t.k===k) || TFS.find(t=>t.k==={'1D':'D','1W':'W'}[k]);
-const allowedTf = (s, t) => s.src==='yahoo' ? !!t.y : s.dvol ? !!t.dv : true;
+const allowedTf = (s, t) => s.src==='yahoo' ? !!t.y : s.dvol ? !!t.dv : s.src==='bitstamp' ? !!BS_STEP0[t.k] : true;
+const BS_STEP0 = {'1m':1,'3m':1,'5m':1,'15m':1,'30m':1,'1h':1,'2h':1,'4h':1,'12h':1,'D':1,'W':1,'M':1};
 
 /* ---------- simboli ---------- */
 let WL = [], META = {symbols:{}}, SYM = {};
 function addSym(it, group){
   const s = {id:it.id, name:it.name||it.id, src:it.src||'yahoo', group:group||''};
   if (s.src==='deribit'){ s.inst=it.inst; if (it.inst.startsWith('DVOL:')) s.dvol=it.inst.slice(5); s.pp = s.dvol?2:/^ETH/.test(it.inst)?2:/-[CP]$/.test(it.inst)?4:1 }
+  if (s.src==='bitstamp'){ s.pair=it.pair||'btcusd'; s.pp=it.pp!=null?it.pp:0 }
   SYM[s.id]=s; return s;
 }
 const symOf = id => SYM[id] || addSym({id, src:'deribit', inst:id}, 'Deribit');
@@ -217,7 +220,7 @@ let state = {
   stay: LS.get('stay',false),
   ct: LS.get('ct','candle_solid'),
   cursor: LS.get('cursor','cross'),
-  axis: LS.get('axis','normal'),
+  axis: LS.get('axis2','log'),
   closed: LS.get('closedGroups',[]),
   upC: LS.get('upC','#089981'), dnC: LS.get('dnC','#f23645'), grid: LS.get('grid',true)
 };
@@ -289,6 +292,27 @@ async function fetchDeribit(s, tf, end){
   }
   return out;
 }
+
+/* ---------- Bitstamp (BTC zgodovina od 2011, kot BITSTAMP:BTCUSD v TW) ---------- */
+const BS_STEP = {'1m':60,'3m':180,'5m':300,'15m':900,'30m':1800,'1h':3600,'2h':7200,'4h':14400,'12h':43200,'D':86400,'W':86400,'M':86400};
+async function fetchBitstamp(s, tf, end){
+  const step = BS_STEP[tf.k], pages = tf.agg==='M' ? 6 : 1; let out=[], e=Math.floor(end/1000);
+  for (let i=0;i<pages;i++){
+    const r = await fetch('https://www.bitstamp.net/api/v2/ohlc/'+s.pair+'/?step='+step+'&limit=1000&end='+e); if (!r.ok) throw {message:'Bitstamp '+r.status};
+    const j = await r.json(); const part=((j.data&&j.data.ohlc)||[]).map(o=>({timestamp:+o.timestamp*1000,open:+o.open,high:+o.high,low:+o.low,close:+o.close,volume:+o.volume}));
+    if (!part.length) break; out = part.concat(out.filter(b=>b.timestamp>part[part.length-1].timestamp)); e = Math.floor(part[0].timestamp/1000)-1;
+    if (part.length<1000) break;
+  }
+  return out;
+}
+let bsWs=null, bsCb={};
+function bsSub(pair, cb, key){ bsCb[key]=cb;
+  if (bsWs && bsWs.readyState<2){ if (bsWs.readyState===1) bsWs.send(JSON.stringify({event:'bts:subscribe',data:{channel:'live_trades_'+pair}})); return }
+  bsWs = new WebSocket('wss://ws.bitstamp.net');
+  bsWs.onopen = () => bsWs.send(JSON.stringify({event:'bts:subscribe',data:{channel:'live_trades_'+pair}}));
+  bsWs.onmessage = e => { const m=JSON.parse(e.data); if (m.event==='trade' && m.data){ const t={price:+m.data.price, amount:+m.data.amount, ts:+m.data.timestamp*1000}; Object.values(bsCb).forEach(f=>f&&f(t)) } else if (m.event==='bts:request_reconnect'){ try{ bsWs.close() }catch(x){} } };
+  bsWs.onclose = () => { bsWs=null; setTimeout(()=>{ const ks=Object.keys(bsCb).filter(k=>bsCb[k]); if (ks.length) bsSub(pair, bsCb[ks[0]], ks[0]) }, 3000) };
+}
 const yCache = {};
 async function fetchYahoo(s, tf){
   const url = 'data/'+s.id.replace(/[^A-Za-z0-9._-]/g,'_')+'_'+tf.y+'.json?v='+META.updated;
@@ -308,11 +332,13 @@ const loader = {
       if (s.src==='yahoo' && !(META.symbols[s.id]||{}).ok) { updateStatus(); callback([], false); return }
       let base;
       if (s.src==='yahoo') base = await fetchYahoo(s, tf);
+      else if (s.src==='bitstamp') base = await fetchBitstamp(s, tf, type==='forward' && timestamp ? timestamp-1 : Date.now());
       else base = await fetchDeribit(s, tf, type==='forward' && timestamp ? timestamp-1 : Date.now());
       let bars = base;
-      if (tf.agg){ const kf=keyFns[tf.agg]; bars = bucket(base, kf);
+      if (tf.agg && !(s.src==='bitstamp' && tf.agg==='4h')){ const kf=keyFns[tf.agg]; bars = bucket(base, kf);
         if (type==='init'){ const lk = bars.length ? bars[bars.length-1].timestamp : 0; curRaw = base.filter(b=>kf(b.timestamp)===lk) }
-        if (type==='forward' && timestamp) bars = bars.filter(b=>b.timestamp<timestamp) }
+        if (type==='forward' && timestamp) bars = bars.filter(b=>b.timestamp<timestamp);
+        if (tf.agg==='W' && !noMore && bars.length>1) bars = bars.slice(1) }
       rawBars = type==='init' ? bars.slice() : bars.concat(rawBars);
       const out = state.ct==='heikin' ? heikin(rawBars).slice(0, bars.length) : bars;
       if (type==='init'){ if (!bars.length) setStatus('Ni podatkov za '+s.id,'bad'); else { headerPrice(); updateStatus() } }
@@ -323,6 +349,15 @@ const loader = {
   subscribeBar: ({callback}) => {
     unsubscribeChart();
     const s = symOf(state.sym), tf = tfOf(state.tf);
+    if (s.src==='bitstamp'){
+      bsSub(s.pair, t => { if (symOf(state.sym)!==s) return; const unit = tf.agg && tf.agg!=='4h' ? null : tf.ms; const kf = tf.agg && tf.agg!=='4h' ? keyFns[tf.agg] : (x=>Math.floor(x/unit)*unit);
+        const k=kf(t.ts), last=rawBars[rawBars.length-1]; if (!last || k<last.timestamp) return;
+        let bar = k===last.timestamp ? {...last, high:Math.max(last.high,t.price), low:Math.min(last.low,t.price), close:t.price, volume:(last.volume||0)+t.amount} : {timestamp:k, open:t.price, high:t.price, low:t.price, close:t.price, volume:t.amount};
+        if (k===last.timestamp) rawBars[rawBars.length-1]=bar; else rawBars.push(bar);
+        if (state.ct==='heikin'){ const n=rawBars.length, w=rawBars.slice(Math.max(0,n-80)); bar = heikin(w)[w.length-1] }
+        callback(bar) }, 'chart');
+      return;
+    }
     if (s.src!=='deribit') return;
     const push = bar => {
       if (tf.agg){ const kf=keyFns[tf.agg]; const i=curRaw.findIndex(x=>x.timestamp===bar.timestamp); if (i>=0) curRaw[i]=bar; else curRaw.push(bar);
@@ -348,7 +383,7 @@ const loader = {
       if (!wlChs.has('ticker.'+s.inst+'.100ms')) { live[s.id] = {...(live[s.id]||{}), last: d.close}; headerPrice() }
     }, true);
   },
-  unsubscribeBar: () => unsubscribeChart()
+  unsubscribeBar: () => { unsubscribeChart(); bsCb.chart=null }
 };
 
 /* ---------- lastne risbe ---------- */
@@ -359,7 +394,8 @@ const pfmt = (chart, v) => { const p=(chart.getSymbol()||{}).pricePrecision; ret
 const reg = o => klinecharts.registerOverlay(o);
 reg({ name:'rect', totalStep:3, needDefaultPointFigure:true, needDefaultXAxisFigure:true, needDefaultYAxisFigure:true,
   createPointFigures:({overlay, coordinates}) => { if (coordinates.length<2) return []; const [a,b]=coordinates, c=colOf(overlay);
-    return [{type:'rect', attrs:{x:Math.min(a.x,b.x), y:Math.min(a.y,b.y), width:Math.abs(b.x-a.x), height:Math.abs(b.y-a.y)}, styles:{style:'stroke_fill', color:c+'26', borderColor:c, borderSize:1}}] } });
+    const fill=(overlay.extendData&&overlay.extendData.fill)||c+'26', bw=(overlay.styles&&overlay.styles.line&&overlay.styles.line.size)||1;
+    return [{type:'rect', attrs:{x:Math.min(a.x,b.x), y:Math.min(a.y,b.y), width:Math.abs(b.x-a.x), height:Math.abs(b.y-a.y)}, styles:{style:'stroke_fill', color:fill, borderColor:c, borderSize:bw}}] } });
 reg({ name:'circle', totalStep:3, needDefaultPointFigure:true,
   createPointFigures:({overlay, coordinates}) => { if (coordinates.length<2) return []; const [a,b]=coordinates, c=colOf(overlay);
     return [{type:'circle', attrs:{x:a.x, y:a.y, r:Math.hypot(b.x-a.x,b.y-a.y)}, styles:{style:'stroke_fill', color:c+'26', borderColor:c, borderSize:1}}] } });
@@ -505,7 +541,7 @@ new ResizeObserver(()=>chart.resize()).observe($('#chart'));
 /* ---------- glava / status ---------- */
 const live = {};
 function quote(s){
-  if (s.src==='deribit'){ const l=live[s.id]||{}; return {last:l.last, chg:l.chg, pp:s.pp} }
+  if (s.src==='deribit' || s.src==='bitstamp'){ const l=live[s.id]||{}; return {last:l.last, chg:l.chg, pp:s.pp} }
   const m = META.symbols[s.id]||{}; return {last:m.last, chg:m.chg, pp:ppFor(m.last)}
 }
 function headerPrice(){
@@ -516,7 +552,8 @@ function headerPrice(){
 }
 function updateStatus(){
   const s = symOf(state.sym);
-  if (s.src==='deribit') setStatus(wsOk?'V živo · Deribit':'Povezujem z Deribit…', wsOk?'ok':'bad');
+  if (s.src==='bitstamp') setStatus('V živo · Bitstamp (zgodovina od 2011)', 'ok');
+  else if (s.src==='deribit') setStatus(wsOk?'V živo · Deribit':'Povezujem z Deribit…', wsOk?'ok':'bad');
   else { const m=META.symbols[s.id]||{};
     setStatus(m.ok ? 'Yahoo '+(m.yahoo||'')+' · zamik ~30 min · '+agoTxt(META.updated) : 'Ni podatkov za '+s.id, m.ok?'delay':'bad') }
   $('#info').textContent = s.name;
@@ -566,7 +603,7 @@ function symbolSearch(initial){
     for (const s of Object.values(SYM)){
       if (t && !s.id.toUpperCase().includes(t) && !s.name.toUpperCase().includes(t)) continue;
       const qq=quote(s);
-      h += '<div class="li" data-id="'+esc(s.id)+'"><div><b>'+esc(s.id)+'</b> <small>'+esc(s.name)+'</small></div><small>'+esc(s.src==='deribit'?'Deribit':s.group||'Yahoo')+' · '+fmt(qq.last,qq.pp)+'</small></div>';
+      h += '<div class="li" data-id="'+esc(s.id)+'"><div><b>'+esc(s.id)+'</b> <small>'+esc(s.name)+'</small></div><small>'+esc(s.src==='deribit'?'Deribit':s.src==='bitstamp'?'Bitstamp':s.group||'Yahoo')+' · '+fmt(qq.last,qq.pp)+'</small></div>';
     }
     if (t && !SYM[t]) h += '<div class="li" data-id="'+esc(t)+'" data-new="1"><div><b>'+esc(t)+'</b> <small>odpri kot Deribit instrument</small></div><small>Deribit</small></div>';
     list.innerHTML = h || '<div class="sec">Ni zadetkov</div>';
@@ -742,7 +779,7 @@ function cancelTool(silent){
   if (drawingId){ const o=myOverlays().find(x=>x.id===drawingId); if (o && o.currentStep!==-1 && o.totalStep && o.currentStep < o.totalStep){ chart.removeOverlay({id:drawingId}); undoStack.pop() } drawingId=null }
   tool=null; hint(''); if (!silent) renderLeft();
 }
-const drawKey = () => 'draw_'+(state.sym==='BTCUSD'?'BTC-PERPETUAL':state.sym);
+const drawKey = () => 'draw_'+(state.sym==='BTC-PERP'?'BTC-PERPETUAL':state.sym);
 const serialize = () => myOverlays().filter(o=>o.id!==drawingId && o.points && o.points.length && o.points.every(p=>p.timestamp!=null && p.value!=null))
   .map(o=>({name:o.name, points:o.points.map(p=>({timestamp:p.timestamp,value:p.value})), styles:o.styles, lock:o.lock, extendData:o.extendData}));
 let undoStack=[], redoStack=[];
@@ -802,7 +839,7 @@ $('#k').addEventListener('contextmenu', e => {
         if (v==='rmi'){ state.inds.forEach(o=>rmInd(o.name)); state.inds=[]; saveInds() } });
   }, 0);
 });
-function resetView(){ chart.setBarSpace(8); chart.setOffsetRightDistance(80); chart.scrollToRealTime(); setAxis('normal') }
+function resetView(keepAxis){ chart.setBarSpace(8); chart.setOffsetRightDistance(80); chart.scrollToRealTime(); if (!keepAxis) setAxis(state.axis) }
 
 /* ---------- spodnja vrstica ---------- */
 const RANGES = [['1D',864e5,'5m','15m'],['5D',4.32e8,'15m','15m'],['1M',2.592e9,'1h','1h'],['3M',7.776e9,'4h','4h'],['6M',1.5552e10,'D','D'],['YTD',null,'D','D'],['1Y',3.1536e10,'D','D'],['5Y',1.5768e11,'W','W'],['All',Infinity,'M','M']];
@@ -823,9 +860,9 @@ function tick(){ const t=new Date().toLocaleTimeString('sl-SI',{timeZone:state.t
   $('#clock').textContent=t+' '+off }
 setInterval(tick,1000); tick();
 $('#clockBtn').onclick = e => openPop(e.currentTarget, item('Europe/Ljubljana','Ljubljana (CET)','',state.tz!=='UTC')+item('UTC','UTC','',state.tz==='UTC'), v=>{ state.tz=v; chart.setTimezone(v); LS.set('tz',v); tick() }, 'up');
-function setAxis(a){ state.axis=a; LS.set('axis',a); chart.overrideYAxis({paneId:'candle_pane', name: a==='pct'?'percentage':a==='log'?'logarithm':'normal'});
-  $('#pctBtn').classList.toggle('on',a==='pct'); $('#logBtn').classList.toggle('on',a==='log'); $('#autoBtn').classList.toggle('on',a==='normal') }
-$('#pctBtn').onclick=()=>setAxis(state.axis==='pct'?'normal':'pct'); $('#logBtn').onclick=()=>setAxis(state.axis==='log'?'normal':'log'); $('#autoBtn').onclick=()=>{ setAxis('normal'); chart.scrollToRealTime() };
+function setAxis(a){ state.axis=a; LS.set('axis2',a); chart.overrideYAxis({paneId:'candle_pane', name: a==='pct'?'percentage':a==='log'?'logarithm':'normal'});
+  $('#pctBtn').classList.toggle('on',a==='pct'); $('#logBtn').classList.toggle('on',a==='log'); $('#autoBtn').classList.toggle('on',a!=='pct') }
+$('#pctBtn').onclick=()=>setAxis(state.axis==='pct'?'normal':'pct'); $('#logBtn').onclick=()=>setAxis(state.axis==='log'?'normal':'log'); $('#autoBtn').onclick=()=>{ setAxis(state.axis==='pct'?'normal':state.axis); resetView(true) };
 
 /* ---------- nastavitve, celozaslonski način, posnetek ---------- */
 $('#setBtn').onclick = () => {
@@ -851,7 +888,7 @@ function renderWL(){
     h += '<div class="grp'+(closed?' closed':'')+'" data-g="'+esc(g.group)+'">'+esc(g.group.toUpperCase())+'</div>';
     if (closed) continue;
     for (const it of g.items){ const s=SYM[it.id];
-      h += '<div class="row" data-id="'+esc(s.id)+'"><b>'+esc(s.id)+(s.src==='deribit'?'<span class="live" title="v živo"></span>':'')+'<small>'+esc(s.name)+'</small></b><span class="n"></span><span class="p"></span></div>' }
+      h += '<div class="row" data-id="'+esc(s.id)+'"><b>'+esc(s.id)+((s.src==='deribit'||s.src==='bitstamp')?'<span class="live" title="v živo"></span>':'')+'<small>'+esc(s.name)+'</small></b><span class="n"></span><span class="p"></span></div>' }
   }
   const extra = LS.get('customSyms',[]);
   if (extra.length){ h += '<div class="grp" data-g="">DERIBIT (DODANO)</div>';
@@ -871,6 +908,10 @@ function paintRow(id){
 }
 function markSel(){ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel', r.dataset.id===state.sym)) }
 function startLiveWL(){
+  for (const s of Object.values(SYM)){ if (s.src!=='bitstamp') continue;
+    fetch('https://www.bitstamp.net/api/v2/ticker/'+s.pair+'/').then(r=>r.json()).then(t=>{ const l=live[s.id]=live[s.id]||{}; l.open=+t.open; if (l.last==null) l.last=+t.last; l.chg=(l.last/l.open-1)*100; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() }).catch(()=>{});
+    let tp=0; bsSub(s.pair, t=>{ const l=live[s.id]=live[s.id]||{}; l.last=t.price; if (l.open) l.chg=(l.last/l.open-1)*100; const now=Date.now(); if (now-tp>500){ tp=now; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() } }, 'wl_'+s.id);
+  }
   for (const s of Object.values(SYM)){
     if (s.src!=='deribit' || !WL.some(g=>g.items.some(i=>i.id===s.id))) continue;
     if (s.dvol){
@@ -922,6 +963,12 @@ document.addEventListener('keydown', e => {
   WL.forEach(g=>g.items.forEach(it=>addSym(it, g.group)));
   LS.get('customSyms',[]).forEach(id=>{ if(!SYM[id]) addSym({id,src:'deribit',inst:id},'Deribit') });
   await loadMeta();
+  try { const r = await fetch('tv_drawings.json?t='+Date.now()); if (r.ok){ const tv = await r.json();
+    for (const [sid, list] of Object.entries(tv)){ if (LS.get('tvimp_'+sid,false)) continue;
+      const key='draw_'+sid, cur=LS.get(key,[]);
+      for (const d of list){ if (d.name==='brush' && d.points.length<2) continue;
+        cur.push({name:d.name, points:d.points, styles:lineStyle(d.c, d.w, d.s===2?'dash':d.s===1?'dot':null), lock:false, extendData: d.fill ? {fill: hexA(d.fill[0], d.fill[1])} : undefined}) }
+      LS.set(key, cur); LS.set('tvimp_'+sid, true) } } } catch(e){}
   if (!SYM[state.sym]) state.sym = 'BTCUSD';
   renderWL(); startLiveWL();
   state.inds.forEach(addInd);

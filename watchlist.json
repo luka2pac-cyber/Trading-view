@@ -4,6 +4,13 @@
   "items": [
    {
     "id": "BTCUSD",
+    "src": "bitstamp",
+    "pair": "btcusd",
+    "pp": 0,
+    "name": "BTC/USD (Bitstamp)"
+   },
+   {
+    "id": "BTC-PERP",
     "src": "deribit",
     "inst": "BTC-PERPETUAL",
     "name": "BTC perp (Deribit)"
@@ -130,10 +137,9 @@
    {
     "id": "KRK",
     "y": [
-     "KRKG.LJ",
-     "KRK.LJ"
+     "KRK.WA"
     ],
-    "name": "Krka"
+    "name": "Krka (Varšava, PLN)"
    },
    {
     "id": "BRK.B",
@@ -161,8 +167,9 @@
    {
     "id": "RACE",
     "y": [
-     "RACE"
-    ]
+     "RACE.MI"
+    ],
+    "name": "Ferrari (Milano, EUR)"
    },
    {
     "id": "MSTR",
@@ -339,16 +346,21 @@
    },
    {
     "id": "903246",
-    "y": [],
-    "name": "? (ne vem, kaj je)"
+    "y": [
+     "KRKG.F",
+     "KRKA.F",
+     "KRKA.DE",
+     "KRK.F"
+    ],
+    "name": "Krka (L&S, EUR)"
    },
    {
     "id": "NLB",
     "y": [
-     "NLBR.LJ",
-     "NLB.LJ"
+     "NLB.IL",
+     "NLBR.IL"
     ],
-    "name": "NLB"
+    "name": "NLB GDR (London)"
    },
    {
     "id": "LKPG",
@@ -373,7 +385,8 @@
     "id": "SPCX",
     "y": [
      "SPCX"
-    ]
+    ],
+    "name": "SpaceX"
    },
    {
     "id": "MU",
