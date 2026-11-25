@@ -100,7 +100,32 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #dtb .sw{width:18px;height:18px;border-radius:3px;border:1px solid #fff4}
 #toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);background:var(--pop);padding:8px 14px;border-radius:6px;display:none;z-index:60;box-shadow:0 4px 18px #000a}
 #hint{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:var(--acc);color:#fff;padding:5px 12px;border-radius:4px;font-size:12px;display:none;z-index:25;pointer-events:none;white-space:nowrap}
+.monly{display:none!important}
+#fab{position:absolute;right:62px;bottom:14px;z-index:20;width:46px;height:46px;border-radius:50%;background:#2a2e39;justify-content:center;box-shadow:0 4px 14px #000a}
+#mnav{background:var(--bg);border-top:1px solid var(--line);justify-content:space-around;align-items:stretch;padding-bottom:env(safe-area-inset-bottom)}
+#mnav button{flex:1;flex-direction:column;gap:2px;font-size:11px;color:var(--mute);border-radius:0;justify-content:center}
+#mnav button.on{color:#fff}
+.pop.sheet{left:0!important;right:0!important;top:auto!important;bottom:0!important;border-radius:14px 14px 0 0;max-height:72vh;padding:8px 0 calc(12px + env(safe-area-inset-bottom));min-width:0}
+.pop.sheet::before{content:"";display:block;width:38px;height:4px;border-radius:2px;background:#434651;margin:2px auto 8px}
+.pop.sheet .it{padding:13px 18px;font-size:15px}
+.tgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:2px 10px 6px}
+.tgrid .it{flex-direction:column;gap:6px;padding:10px 4px!important;font-size:11px!important;text-align:center;white-space:normal;border-radius:8px}
+.tgrid .it.on{background:#2962ff22}
 @media(max-width:900px){
+  .monly{display:flex!important}
+  #app,#app.nowl{grid-template-rows:48px minmax(0,1fr) 58px!important;grid-template-columns:minmax(0,1fr)!important}
+  #top{grid-column:1/-1;border-bottom:1px solid var(--line);gap:0}
+  #top .vs,#tfFav,#tfMore,#redoBtn,#setBtn,#fsBtn,#snap,#wlBtnM,#indBtn span{display:none!important}
+  #symBtn{min-width:0;padding:6px 10px;background:transparent;font-size:16px}
+  #symBtn svg{display:none}
+  #price{font-size:13px}#chg{font-size:12px}
+  #left,#bottom,#bottomL,#bottomR,#rstrip{display:none!important}
+  #chart{grid-column:1/-1;grid-row:2;border-radius:0}
+  #mnav{grid-column:1/-1;grid-row:3}
+  #wl{position:fixed!important;top:48px!important;bottom:58px!important;left:0;right:0;width:auto!important;z-index:35;border-radius:0!important;margin:0!important;box-shadow:none!important}
+  #dtb{top:auto;bottom:70px}
+  #hint{top:8px;white-space:normal;max-width:90%;text-align:center}
+
   #app,#app.nowl{grid-template-columns:42px 1fr 0 0}
   #rstrip{display:none}
   #wl{position:fixed;top:42px;right:0;bottom:32px;width:min(340px,92vw);z-index:35;box-shadow:-8px 0 24px #000a;border-radius:0;margin:0}
@@ -131,10 +156,12 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
     <button id="setBtn" title="Nastavitve"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
     <button id="fsBtn" title="Celozaslonski način"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
     <button id="snap" title="Posnetek grafa (PNG)"><svg class="i" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+    <button id="mTf" class="monly" data-popbtn="1" title="Interval" style="font-weight:700">D</button>
+    <button id="mMore" class="monly" data-popbtn="1" title="Več" style="font-size:20px;padding:4px 10px">⋯</button>
     <button id="wlBtnM" title="Watchlist" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></button>
   </div>
   <div id="left"></div>
-  <div id="chart"><div id="k"></div><div id="dtb"></div><div id="hint"></div></div>
+  <div id="chart"><div id="k"></div><button id="fab" class="monly" data-popbtn="1" title="Risanje"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 6l3 3"/></svg></button><div id="dtb"></div><div id="hint"></div></div>
   <div id="wl">
     <div class="wlTop"><b>Watchlist</b><button id="wlSearch" title="Poišči / dodaj simbol"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
     <div class="wlh"><span>Simbol</span><span style="text-align:right">Zadnja</span><span style="text-align:right">Spr. %</span></div>
@@ -156,6 +183,12 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
     <button id="autoBtn" class="on" title="Samodejno prilagodi">auto</button>
   </div>
   <div id="bottomR"><span id="info"></span></div>
+  <nav id="mnav" class="monly">
+    <button data-tab="wl"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Watchlist</span></button>
+    <button data-tab="chart" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M8 4v16M16 6v12"/><rect x="6" y="8" width="4" height="8"/><rect x="14" y="9" width="4" height="6"/></svg><span>Graf</span></button>
+    <button data-tab="search"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><span>Iskanje</span></button>
+    <button data-tab="menu" data-popbtn="1"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Meni</span></button>
+  </nav>
 </div>
 <div class="pop" id="pop"></div>
 <div class="modal" id="modal"><div class="dlg" id="dlg"></div></div>
@@ -519,6 +552,7 @@ klinecharts.registerIndicator({
 
 /* ---------- graf ---------- */
 const chart = klinecharts.init('k', {styles:'dark', timezone: state.tz, locale:'en-US'});
+const isMob = () => matchMedia('(max-width:900px)').matches;
 function applyStyles(){
   const gc = state.grid ? '#1f2430' : 'rgba(0,0,0,0)', u=state.upC, d=state.dnC;
   const area = state.ct==='area' || state.ct==='line', lines = state.cursor==='cross';
@@ -527,8 +561,8 @@ function applyStyles(){
     candle:{type: area?'area':(state.ct==='heikin'?'candle_solid':state.ct),
       bar:{upColor:u,downColor:d,noChangeColor:'#787b86',upBorderColor:u,downBorderColor:d,upWickColor:u,downWickColor:d},
       area:{lineColor:'#2962ff',lineSize:2,backgroundColor: state.ct==='line' ? [{offset:0,color:'rgba(0,0,0,0)'},{offset:1,color:'rgba(0,0,0,0)'}] : [{offset:0,color:'rgba(41,98,255,0.01)'},{offset:1,color:'rgba(41,98,255,0.25)'}]},
-      priceMark:{last:{upColor:u,downColor:d}},tooltip:{showRule:'always'}},
-    indicator:{ohlc:{upColor:u,downColor:d},bars:[{upColor:u+'80',downColor:d+'80',noChangeColor:'#787b86'}]},
+      priceMark:{last:{upColor:u,downColor:d}},tooltip:{showRule: isMob() ? 'follow_cross' : 'always', text:{size: isMob()?11:12}}},
+    indicator:{tooltip:{showRule: isMob() ? 'follow_cross' : 'always', text:{size: isMob()?10:12}}, ohlc:{upColor:u,downColor:d},bars:[{upColor:u+'80',downColor:d+'80',noChangeColor:'#787b86'}]},
     xAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
     yAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
     separator:{color:'#2a2e39'},
@@ -571,12 +605,14 @@ function load(){
   undoStack=[]; redoStack=[];
   LS.set('sym2',state.sym); LS.set('tf',state.tf);
 }
-function pick(id){ state.sym=id; load(); $('#app').classList.remove('wlopen') }
+function pick(id){ state.sym=id; load(); $('#app').classList.remove('wlopen'); document.querySelectorAll('#mnav button').forEach(b=>b.classList.toggle('on', b.dataset.tab==='chart')) }
 
 /* ---------- popup meniji ---------- */
 const pop = $('#pop');
+const isM = () => matchMedia('(max-width:900px)').matches;
 function openPop(anchor, html, onClick, place){
-  pop.innerHTML = html; pop.classList.add('open');
+  pop.innerHTML = html; pop.classList.add('open'); pop.classList.toggle('sheet', isM());
+  if (isM()){ pop.onclick = e => { const it = e.target.closest('[data-v]'); if (!it) return; closePop(); onClick(it.dataset.v) }; return }
   const r = anchor.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
   let x = place==='right' ? r.right+4 : r.left, y = place==='right' ? r.top : place==='up' ? r.top-ph-4 : r.bottom+4;
   x = Math.max(4, Math.min(x, innerWidth-pw-4)); y = Math.max(4, Math.min(y, innerHeight-ph-4));
@@ -619,6 +655,7 @@ $('#symBtn').onclick = ()=>symbolSearch(); $('#wlSearch').onclick = ()=>symbolSe
 
 /* ---------- intervali ---------- */
 function renderTfs(){
+  $('#mTf').textContent = state.tf;
   const box=$('#tfFav'); box.innerHTML=''; const s=symOf(state.sym);
   const favs = FAV.includes(state.tf) ? FAV : [...FAV, state.tf];
   for (const k of favs){ const t=tfOf(k); const b=document.createElement('button'); b.textContent=t.k; b.title=t.l;
@@ -939,6 +976,60 @@ async function loadMeta(){
     const changed = m.updated !== META.updated; META = m; return changed } catch(e){ return false }
 }
 setInterval(async ()=>{ if (await loadMeta()){ renderWL(); headerPrice(); if (symOf(state.sym).src==='yahoo') load(); else updateStatus() } }, 5*60*1000);
+
+
+/* ---------- telefon: meniji kot v TradingView aplikaciji ---------- */
+$('#mTf').onclick = e => { const s=symOf(state.sym);
+  const groups=[['Minute',['1m','3m','5m','15m','30m']],['Ure',['1h','2h','4h','12h']],['Dnevi',['D','W','M']]];
+  let h=''; for (const [g,ks] of groups){ const vis=ks.filter(k=>allowedTf(s,tfOf(k))); if (!vis.length) continue; h+='<div class="hd">'+g+'</div><div class="tgrid">'+vis.map(k=>'<div class="it'+(k===state.tf?' on':'')+'" data-v="'+k+'"><b style="font-size:15px">'+k+'</b></div>').join('')+'</div>' }
+  h += '<div class="hd">Obdobje</div><div class="tgrid">'+RANGES.map(r=>'<div class="it" data-v="R:'+r[0]+'"><b>'+r[0]+'</b></div>').join('')+'</div>';
+  openPop(e.currentTarget, h, v=>{ if (v.startsWith('R:')){ const b=document.querySelector('#ranges [data-r="'+v.slice(2)+'"]'); if (b) b.click() } else { state.tf=v; load() } }) };
+function moreMenu(anchor){
+  const h = item('search','Iskanje simbola',SV('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>'))+
+    item('ind','Indikatorji',SV('<path d="M3 17l5-6 4 4 8-9"/>'))+
+    item('ct','Vrsta grafa',CTS.find(c=>c[0]===state.ct)[2])+'<hr>'+
+    item('log','Logaritemska lestvica','',state.axis==='log')+item('pct','Odstotna lestvica','',state.axis==='pct')+item('lin','Navadna lestvica','',state.axis==='normal')+
+    item('reset','Ponastavi pogled grafa','')+'<hr>'+
+    item('cross','Kazalec: križ',ICON.cross,state.cursor==='cross')+item('dot','Kazalec: pika',ICON.dot,state.cursor==='dot')+'<hr>'+
+    item('tz','Časovni pas: '+(state.tz==='UTC'?'UTC':'Ljubljana'),'')+item('set','Nastavitve grafa','')+item('snap','Posnetek grafa','')+item('fs','Celozaslonski način','');
+  openPop(anchor, h, v=>{
+    if (v==='search') symbolSearch(); if (v==='ind') indDialog(); if (v==='ct') $('#ctBtn').click();
+    if (v==='log') setAxis('log'); if (v==='pct') setAxis('pct'); if (v==='lin') setAxis('normal'); if (v==='reset') resetView(true);
+    if (v==='cross'||v==='dot') setCursor(v);
+    if (v==='tz'){ state.tz = state.tz==='UTC'?'Europe/Ljubljana':'UTC'; chart.setTimezone(state.tz); LS.set('tz',state.tz); tick() }
+    if (v==='set') $('#setBtn').click(); if (v==='snap') $('#snap').click(); if (v==='fs') $('#fsBtn').click() });
+}
+$('#mMore').onclick = e => moreMenu(e.currentTarget);
+$('#fab').onclick = e => {
+  let h='';
+  const secs=[['Linije','lines'],['Fibonacci','fib'],['Oblike','shapes'],['Napovedi in meritve','measure'],['Besedilo','text']];
+  for (const [t,id] of secs){ const g=GROUPS.find(x=>x.id===id); h+='<div class="hd">'+t+'</div><div class="tgrid">'+g.items.map(i=>'<div class="it'+(tool===i[0]?' on':'')+'" data-v="'+i[0]+'">'+ICON[i[0]]+'<span>'+esc(i[1])+'</span></div>').join('')+'</div>' }
+  const ov=myOverlays(), locked=ov.length>0&&ov.every(o=>o.lock), hidden=ov.length>0&&ov.every(o=>!o.visible);
+  h+='<div class="hd">Nastavitve risanja</div><div class="tgrid">'+
+    '<div class="it'+(state.magnet!=='off'?' on':'')+'" data-v="_mag">'+ICON.magnet+'<span>Magnet</span></div>'+
+    '<div class="it'+(state.stay?' on':'')+'" data-v="_stay">'+ICON.stay+'<span>Ostani v risanju</span></div>'+
+    '<div class="it'+(locked?' on':'')+'" data-v="_lock">'+(locked?ICON.lock:ICON.unlock)+'<span>'+(locked?'Odkleni':'Zakleni')+' vse</span></div>'+
+    '<div class="it'+(hidden?' on':'')+'" data-v="_hide">'+(hidden?ICON.eyeOff:ICON.eye)+'<span>'+(hidden?'Pokaži':'Skrij')+' vse</span></div>'+
+    '<div class="it" data-v="_undo">'+SV('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-4"/>')+'<span>Razveljavi</span></div>'+
+    '<div class="it" data-v="_redo">'+SV('<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h4"/>')+'<span>Uveljavi</span></div>'+
+    '<div class="it" data-v="_del">'+ICON.trash+'<span>Izbriši risbe</span></div>'+
+    (tool?'<div class="it" data-v="_cancel">'+SV('<path d="M6 6l12 12M18 6L6 18"/>')+'<span>Prekliči</span></div>':'')+'</div>';
+  openPop(e.currentTarget, h, v=>{
+    if (!v.startsWith('_')){ const g=GROUPS.find(x=>x.items.some(i=>i[0]===v)); if (g){ groupSel[g.id]=v; LS.set('groupSel',groupSel) } startTool(v); return }
+    if (v==='_mag'){ state.magnet = state.magnet==='off' ? 'strong' : 'off'; LS.set('magnet2',state.magnet); toast(state.magnet==='off'?'Magnet izklopljen':'Magnet vklopljen') }
+    if (v==='_stay'){ state.stay=!state.stay; LS.set('stay',state.stay); toast(state.stay?'Ostanem v načinu risanja':'Po risbi nazaj na kazalec') }
+    if (v==='_lock'){ const o=myOverlays(); const l=!(o.length&&o.every(x=>x.lock)); o.forEach(x=>chart.overrideOverlay({id:x.id,lock:l})); saveDrawings(); toast(l?'Risbe zaklenjene':'Risbe odklenjene') }
+    if (v==='_hide'){ const o=myOverlays(); const vis=o.length>0&&o.every(x=>!x.visible); o.forEach(x=>chart.overrideOverlay({id:x.id,visible:vis})) }
+    if (v==='_undo') undo(); if (v==='_redo') redo(); if (v==='_cancel') cancelTool();
+    if (v==='_del'){ if (!myOverlays().length) return; if (confirm('Izbrišem vse risbe na '+state.sym+'?')){ snapshot(); chart.removeOverlay({groupId:'d'}); saveDrawings(); closeDtb(); toast('Risbe izbrisane') } }
+    renderLeft() });
+};
+function setTab(t){ document.querySelectorAll('#mnav button').forEach(b=>b.classList.toggle('on', b.dataset.tab===(t==='search'||t==='menu'?'chart':t)));
+  const a=$('#app'); if (t==='wl') a.classList.add('wlopen'); else a.classList.remove('wlopen') }
+$('#mnav').onclick = e => { const b=e.target.closest('[data-tab]'); if (!b) return; const t=b.dataset.tab;
+  if (t==='search'){ setTab('chart'); symbolSearch(); return } if (t==='menu'){ moreMenu(b); return }
+  setTab(t); setTimeout(()=>chart.resize(),0) };
+mq.addEventListener('change', ()=>{ applyStyles(); closePop() });
 
 /* ---------- tipkovnica ---------- */
 document.addEventListener('keydown', e => {
