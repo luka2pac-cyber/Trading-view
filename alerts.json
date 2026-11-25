@@ -15,12 +15,12 @@
   {
    "id": "7M4O8V",
    "sym": "BTCUSD",
-   "price": 80084,
+   "price": 82520,
    "op": "above",
    "note": "",
    "status": "active",
-   "created": 1795628947615,
-   "ref": 59494.94
+   "created": 1795628952318,
+   "ref": 59499.82
   }
  ],
  "bot": "luka_charts_alarm_bot"
