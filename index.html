@@ -1041,7 +1041,7 @@ function moreMenu(anchor){
     item('log','Logaritemska lestvica','',state.axis==='log')+item('pct','Odstotna lestvica','',state.axis==='pct')+item('lin','Navadna lestvica','',state.axis==='normal')+
     item('reset','Ponastavi pogled grafa','')+'<hr>'+
     item('cross','Kazalec: križ',ICON.cross,state.cursor==='cross')+item('dot','Kazalec: pika',ICON.dot,state.cursor==='dot')+'<hr>'+
-    item('tz','Časovni pas: '+(state.tz==='UTC'?'UTC':'Ljubljana'),'')+item('set','Nastavitve grafa','')+item('snap','Posnetek grafa','')+item('fs','Celozaslonski način','');
+    item('tz','Časovni pas: '+(state.tz==='UTC'?'UTC':'Ljubljana'),'')+item('set','Nastavitve grafa','')+item('snap','Posnetek grafa','')+item('fs','Celozaslonski način','')+'<hr><div class="hd" style="text-transform:none">Verzija '+esc(BUILD.slice(0,7))+' · zaslon '+innerWidth+' px</div>';
   openPop(anchor, h, v=>{
     if (v==='search') symbolSearch(); if (v==='ind') indDialog(); if (v==='ct') $('#ctBtn').click();
     if (v==='log') setAxis('log'); if (v==='pct') setAxis('pct'); if (v==='lin') setAxis('normal'); if (v==='reset') resetView(true);
@@ -1097,8 +1097,14 @@ document.addEventListener('keydown', e => {
   if (/^[a-z0-9]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && !modal.classList.contains('open')){ e.preventDefault(); symbolSearch(e.key.toUpperCase()); $('#ssq').dispatchEvent(new Event('input')) }
 });
 
+/* ---------- samodejna posodobitev, ko izide nova verzija ---------- */
+const BUILD = '__BUILD__';
+async function checkVersion(){ if (BUILD.startsWith('__')) return;
+  try { const v=(await (await fetch('version.txt?t='+Date.now(),{cache:'no-store'})).text()).trim(); if (v && v!==BUILD) location.reload() } catch(e){} }
+setInterval(checkVersion, 120000); document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) checkVersion() });
 /* ---------- start ---------- */
 (async () => {
+  checkVersion();
   renderCt(); renderLeft(); connect();
   try { const r = await fetch('watchlist.json?t='+Date.now()); WL = await r.json() }
   catch(e){ WL = [{group:'Glavno', items:[{id:'BTCUSD',src:'deribit',inst:'BTC-PERPETUAL',name:'BTC perp (Deribit)'},{id:'DVOL',src:'deribit',inst:'DVOL:BTC',name:'BTC DVOL (Deribit)'}]}] }
