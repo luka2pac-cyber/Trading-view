@@ -330,7 +330,7 @@ if (!inds0) inds0 = (LS.get('inds',['VOL'])||[]).map(n=>({name:n}));
 if (!LS.get('indsV3',false)){ inds0 = [{name:'LMA'},{name:'LVOL'},{name:'RSIMFI'}, ...inds0.filter(o=>!['VOL','LMA','LVOL','RSIMFI','MA','EMA'].includes(o.name))]; LS.set('inds2',inds0); LS.set('indsV3',true) }
 let state = {
   sym: LS.get('sym2','BTCUSD'),
-  tf: (tfOf(LS.get('tf','D'))||tfOf('D')).k,
+  tf: (tfOf((()=>{ if (!LS.get('tfFix1',false)){ LS.set('tfFix1',true); if (LS.get('tf','D')==='M') LS.set('tf','D') } return LS.get('tf','D') })())||tfOf('D')).k,
   tz: LS.get('tz','Europe/Ljubljana'),
   inds: inds0,
   color: LS.get('color','#2962ff'),
@@ -439,7 +439,7 @@ async function fetchYahoo(s, tf){
   return d.t.map((t,i)=>({timestamp:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i],volume:d.v[i]}));
 }
 let curRaw = [];
-let pendingRange = null;
+let pendingRange = null, tfTemp = false;
 
 const loader = {
   getBars: async ({type, timestamp, callback}) => {
@@ -645,7 +645,10 @@ $('#k').addEventListener('wheel', e => {
   e.preventDefault(); e.stopPropagation();
   let dy = e.deltaY * (e.deltaMode===1 ? 32 : e.deltaMode===2 ? 800 : 1);
   const f = Math.max(0.88, Math.min(1.14, Math.exp(-dy*0.0008)));
-  const r = $('#k').getBoundingClientRect(); chart.zoomAtCoordinate(f, {x:e.clientX-r.left, y:e.clientY-r.top});
+  // kot TradingView: zadnja sveča ostane na mestu (desno), graf se stisne/raztegne vodoravno z leve
+  const r = $('#k').getBoundingClientRect(), sz = chart.getSize('candle_pane','main'), w = (sz&&sz.width)||r.width, n = chart.getDataList().length;
+  let x = w; if (n){ const px = chart.convertToPixel([{dataIndex:n-1}], {paneId:'candle_pane'}); const lx = (Array.isArray(px)?px[0]:px).x; if (lx!=null && lx>=0 && lx<=w) x = lx }
+  chart.zoomAtCoordinate(f, {x, y:e.clientY-r.top});
 }, {capture:true, passive:false});
 const isMob = () => matchMedia('(max-width:900px)').matches;
 function applyStyles(){
@@ -700,7 +703,7 @@ function load(){
   $('#symBtn').classList.toggle('long', state.sym.length>7);
   renderTfs(); headerPrice(); updateStatus(); markSel();
   undoStack=[]; redoStack=[];
-  LS.set('sym2',state.sym); LS.set('tf',state.tf);
+  LS.set('sym2',state.sym); if (!tfTemp) LS.set('tf',state.tf); tfTemp=false;
 }
 function pick(id){ state.sym=id; load(); $('#app').classList.remove('wlopen'); document.querySelectorAll('#mnav button').forEach(b=>b.classList.toggle('on', b.dataset.tab==='chart')) }
 
@@ -1033,7 +1036,7 @@ $('#k').addEventListener('contextmenu', e => {
         if (v==='rmi'){ state.inds.forEach(o=>rmInd(o.name)); state.inds=[]; saveInds() } });
   }, 0);
 });
-function resetView(keepAxis){ chart.setBarSpace(8); chart.setOffsetRightDistance(80); chart.scrollToRealTime(); if (!keepAxis) setAxis(state.axis) }
+function resetView(keepAxis){ const saved=(tfOf(LS.get('tf','D'))||tfOf('D')).k; if (saved!==state.tf && allowedTf(symOf(state.sym), tfOf(saved))){ state.tf=saved; pendingRange=null; load() } chart.setBarSpace(8); chart.setOffsetRightDistance(80); chart.scrollToRealTime(); if (!keepAxis) setAxis(state.axis) }
 
 /* ---------- spodnja vrstica ---------- */
 const RANGES = [['1D',864e5,'5m','15m'],['5D',4.32e8,'15m','15m'],['1M',2.592e9,'1h','1h'],['3M',7.776e9,'4h','4h'],['6M',1.5552e10,'D','D'],['YTD',null,'D','D'],['1Y',3.1536e10,'D','D'],['5Y',1.5768e11,'W','W'],['All',Infinity,'M','M']];
@@ -1041,7 +1044,7 @@ $('#ranges').innerHTML = RANGES.map(r=>'<button data-r="'+r[0]+'" title="'+r[0]+
 $('#ranges').onclick = e => { const b=e.target.closest('[data-r]'); if (!b) return; const r=RANGES.find(x=>x[0]===b.dataset.r); const s=symOf(state.sym);
   let tf = s.src==='yahoo' ? (s.daily && !['D','W','M'].includes(r[3]) ? 'D' : r[3]) : r[2]; if (s.dvol && !tfOf(tf).dv) tf = {'5m':'1m','15m':'1h','4h':'1h'}[tf]||'D';
   pendingRange = r[0]==='YTD' ? Date.now()-Date.UTC(new Date().getUTCFullYear(),0,1) : r[1];
-  if (state.tf===tf) applyRange(); else { state.tf=tf; load() } };
+  if (state.tf===tf) applyRange(); else { state.tf=tf; tfTemp=true; load() } };
 function applyRange(){
   if (pendingRange==null) return; const span=pendingRange; pendingRange=null;
   const list=chart.getDataList(); if (!list.length) return;
