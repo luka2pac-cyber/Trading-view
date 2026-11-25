@@ -11,16 +11,6 @@
    "status": "triggered",
    "created": 1795619547804,
    "triggered": 1795620837510
-  },
-  {
-   "id": "FD1WGA",
-   "sym": "BTCUSD",
-   "price": 13,
-   "op": "below",
-   "note": "",
-   "status": "active",
-   "created": 1795629666044,
-   "ref": 59578.99
   }
  ],
  "bot": "luka_charts_alarm_bot"
