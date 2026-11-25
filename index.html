@@ -330,7 +330,7 @@ if (!inds0) inds0 = (LS.get('inds',['VOL'])||[]).map(n=>({name:n}));
 if (!LS.get('indsV3',false)){ inds0 = [{name:'LMA'},{name:'LVOL'},{name:'RSIMFI'}, ...inds0.filter(o=>!['VOL','LMA','LVOL','RSIMFI','MA','EMA'].includes(o.name))]; LS.set('inds2',inds0); LS.set('indsV3',true) }
 let state = {
   sym: LS.get('sym2','BTCUSD'),
-  tf: 'D', // ob odprtju vedno dnevni (D)
+  tf: (tfOf(LS.get('tf','D'))||tfOf('D')).k, // zadnji izbrani interval (gumbi All/5Y ga ne shranijo)
   tz: LS.get('tz','Europe/Ljubljana'),
   inds: inds0,
   color: LS.get('color','#2962ff'),
@@ -600,7 +600,19 @@ const LMA_LINES = [
 ];
 klinecharts.registerIndicator({
   name:'LMA', shortName:'MA (combo)', series:'price', precision:2, calcParams:[], shouldOhlc:false,
-  figures: LMA_LINES.map(([key,title,color,size])=>({key, title:title+': ', type:'line', styles:()=>({color, size, style:'solid'})})),
+  // črte rišemo sami (figures prazen), da lestvica sledi samo svečam (kot TV 'samo cenovni graf'):
+  // spodnji Bollinger na mesečnem pade proti 0 in je prej na log lestvici stisnil sveče na vrh
+  figures: [],
+  draw: ({ctx, chart, indicator, xAxis, yAxis}) => {
+    const r=indicator.result; if (!r || !r.length) return true;
+    const vr=chart.getVisibleRange(), from=Math.max(0,vr.from-1), to=Math.min(r.length, vr.to+1), log=state.axis==='log';
+    ctx.save(); ctx.lineJoin='round'; ctx.setLineDash([]);
+    for (const [key,,color,size] of LMA_LINES){ ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=size; let st=false;
+      for (let i=from;i<to;i++){ const v=r[i]&&r[i][key]; if (v==null || (log && v<=0)){ st=false; continue }
+        const x=xAxis.convertToPixel(i), y=yAxis.convertToPixel(v); st ? ctx.lineTo(x,y) : ctx.moveTo(x,y); st=true }
+      ctx.stroke() }
+    ctx.restore(); return true;
+  },
   calc: list => { const c=list.map(k=>k.close);
     const e10=emaArr(c,10), e50=emaArr(c,50), e200=emaArr(c,200), e21=emaArr(c,21), s7=smaArr(c,7), s200=smaArr(c,200), bm=smaArr(c,20), sd=stdArr(c,20,bm);
     return list.map((k,i)=>({ema10:e10[i], ema50:e50[i], ema200:e200[i], ema21:e21[i], sma7:s7[i], sma200:s200[i], bbm:bm[i], bbu:bm[i]==null?null:bm[i]+2*sd[i], bbl:bm[i]==null||bm[i]-2*sd[i]<=0?null:bm[i]-2*sd[i]})) },
@@ -1040,7 +1052,7 @@ $('#k').addEventListener('contextmenu', e => {
         if (v==='rmi'){ state.inds.forEach(o=>rmInd(o.name)); state.inds=[]; saveInds() } });
   }, 0);
 });
-function resetView(keepAxis){ yAuto(true); const saved='D'; if (saved!==state.tf && allowedTf(symOf(state.sym), tfOf(saved))){ state.tf=saved; pendingRange=null; load() } chart.setBarSpace(8); chart.setOffsetRightDistance(80); chart.scrollToRealTime(); if (!keepAxis) setAxis(state.axis) }
+function resetView(keepAxis){ yAuto(true); chart.setBarSpace(8); chart.setOffsetRightDistance(80); chart.scrollToRealTime(); if (!keepAxis) setAxis(state.axis) }
 
 /* ---------- spodnja vrstica ---------- */
 const RANGES = [['1D',864e5,'5m','15m'],['5D',4.32e8,'15m','15m'],['1M',2.592e9,'1h','1h'],['3M',7.776e9,'4h','4h'],['6M',1.5552e10,'D','D'],['YTD',null,'D','D'],['1Y',3.1536e10,'D','D'],['5Y',1.5768e11,'W','W'],['All',Infinity,'M','M']];
