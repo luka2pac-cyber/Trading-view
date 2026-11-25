@@ -5,89 +5,160 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#131722">
+<meta name="theme-color" content="#0f0f0f">
 <title>Luka Charts</title>
 <style>
-:root{--bg:#131722;--panel:#1e222d;--line:#2a2e39;--ink:#d1d4dc;--mute:#787b86;--acc:#2962ff;--up:#089981;--dn:#f23645}
+:root{--bg:#0f0f0f;--chart:#131722;--panel:#1e222d;--pop:#1e222d;--line:#2a2e39;--hov:#2a2e39;--ink:#d1d4dc;--mute:#787b86;--acc:#2962ff;--up:#089981;--dn:#f23645}
 *{box-sizing:border-box;min-width:0}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.3 -apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Ubuntu,sans-serif;overflow:hidden}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.3 -apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Ubuntu,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
 button,select,input{font:inherit;color:var(--ink);background:transparent;border:0;border-radius:4px}
-button{cursor:pointer;padding:6px 8px;white-space:nowrap}
-button:hover{background:var(--line)}
-button.on{color:#fff;background:var(--acc)}
+button{cursor:pointer;padding:6px 8px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+button:hover{background:var(--hov)}
+button.on{color:#2962ff}
 button:disabled{opacity:.3;cursor:default;background:none}
-button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
-#app{display:grid;grid-template-rows:44px 1fr 26px;grid-template-columns:46px 1fr 320px;height:100dvh}
-#app.nowl{grid-template-columns:46px 1fr 0}
-#top{grid-column:1/4;display:flex;align-items:center;gap:2px;padding:0 8px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+input[type=text],input[type=search]{background:var(--chart);border:1px solid var(--line);padding:8px 10px;font-size:14px;-webkit-user-select:text;user-select:text}
+svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#app{display:grid;grid-template-rows:42px 1fr 32px;grid-template-columns:48px 1fr 300px 46px;height:100dvh}
+#app.nowl{grid-template-columns:48px 1fr 0 46px}
+#top{grid-column:1/5;display:flex;align-items:center;gap:1px;padding:0 6px;background:var(--bg);border-bottom:4px solid var(--bg);overflow-x:auto;scrollbar-width:none}
 #top::-webkit-scrollbar{display:none}
-#top>*,#tfs>*{flex:none}
-.sep{width:1px;height:22px;background:var(--line);margin:0 6px;flex:none}
-#symName{font-weight:700;padding:6px 8px;background:var(--panel)}
-#custom{width:140px;padding:6px 8px;background:var(--panel);font-size:12px}
-#price{font-weight:700;font-variant-numeric:tabular-nums;padding:0 4px 0 8px}
+#top>*{flex:none}
+.vs{width:1px;height:20px;background:var(--line);margin:0 4px;flex:none}
+#symBtn{font-weight:700;padding:6px 10px;border-radius:16px;background:var(--panel);min-width:96px;justify-content:flex-start}
+#tfFav button{padding:6px 7px;font-weight:600}
+.caret{font-size:9px;color:var(--mute)}
+#price{font-weight:700;font-variant-numeric:tabular-nums;padding:0 4px 0 6px}
 #chg{font-variant-numeric:tabular-nums;padding-right:6px}
 .up{color:var(--up)}.dn{color:var(--dn)}
-#wlBtn{margin-left:auto}
-#left{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-right:1px solid var(--line);overflow-y:auto;scrollbar-width:none}
-#left button{width:38px;height:36px;padding:0;display:grid;place-items:center}
-#left svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-#left .sep{width:26px;height:1px;margin:4px 0}
-#color{width:30px;height:30px;padding:0;cursor:pointer}
-#chart{position:relative;overflow:hidden}
+.grow{flex:1 1 auto!important}
+#left{display:flex;flex-direction:column;align-items:center;padding:4px 0;background:var(--bg);border-right:4px solid var(--bg);overflow-y:auto;scrollbar-width:none}
+#left::-webkit-scrollbar{display:none}
+.tg{position:relative;display:flex;width:44px;flex:none}
+.tg>button:first-child{width:36px;height:36px;padding:0;justify-content:center}
+.tg>.more{width:8px;padding:0;height:36px;justify-content:center;opacity:0;font-size:8px;color:var(--mute)}
+.tg:hover>.more{opacity:1}
+@media(pointer:coarse){.tg>.more{opacity:.7}}
+#left .hs{width:28px;height:1px;background:var(--line);margin:5px 0;flex:none}
+#chart{position:relative;overflow:hidden;background:var(--chart);border-radius:0 6px 6px 0}
 #k{position:absolute;inset:0}
-#wl{border-left:1px solid var(--line);overflow-y:auto;background:var(--bg)}
+#wl{background:var(--chart);margin-left:4px;border-radius:6px 0 0 6px;display:flex;flex-direction:column;overflow:hidden}
 #app.nowl #wl{display:none}
-.wlh{display:grid;grid-template-columns:1fr 84px 64px;padding:8px 10px;color:var(--mute);font-size:12px;position:sticky;top:0;background:var(--bg);z-index:1;border-bottom:1px solid var(--line)}
-.grp{padding:12px 10px 4px;color:var(--mute);font-size:11px;letter-spacing:.02em;cursor:pointer;user-select:none}
-.grp::before{content:"⌄ "}.grp.closed::before{content:"› "}
-.row{display:grid;grid-template-columns:1fr 84px 64px;align-items:center;padding:7px 10px;cursor:pointer;border:1px solid transparent;border-radius:4px;margin:0 4px;font-variant-numeric:tabular-nums}
-.row:hover{background:var(--panel)}
-.row.sel{border-color:#5d606b;background:var(--panel)}
+#rstrip{background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:4px 0;gap:2px;border-left:4px solid var(--bg)}
+#rstrip button{width:38px;height:38px;padding:0;justify-content:center}
+#rstrip button.on{background:var(--hov);color:#fff}
+.wlTop{display:flex;align-items:center;padding:8px 8px 4px 12px;gap:4px}
+.wlTop b{flex:1;font-size:14px}
+.wlh{display:grid;grid-template-columns:1fr 78px 62px;padding:6px 12px;color:var(--mute);font-size:12px;border-bottom:1px solid var(--line)}
+.wlList{overflow-y:auto;flex:1}
+.grp{padding:12px 12px 4px;color:var(--mute);font-size:11px;cursor:pointer}
+.grp::before{content:"⌄  "}.grp.closed::before{content:"›  "}
+.row{display:grid;grid-template-columns:1fr 78px 62px;align-items:center;padding:6px 12px;cursor:pointer;border:1px solid transparent;font-variant-numeric:tabular-nums}
+.row:hover{background:var(--hov)}
+.row.sel{border-color:#5d606b;border-radius:4px;background:var(--panel)}
 .row b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row .n{text-align:right}.row .p{text-align:right}
+.row .n,.row .p{text-align:right;white-space:nowrap;overflow:hidden}
 .row small{display:block;color:var(--mute);font-size:10px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .live{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--up);margin-left:5px;vertical-align:middle}
-.wlf{padding:12px 10px;color:var(--mute);font-size:11px;line-height:1.5}
-#status{grid-column:1/4;display:flex;gap:14px;align-items:center;padding:0 10px;border-top:1px solid var(--line);color:var(--mute);font-size:11px;white-space:nowrap;overflow:hidden}
+.wlf{padding:12px;color:var(--mute);font-size:11px;line-height:1.5}
+#bottom{grid-column:2/3;display:flex;align-items:center;gap:1px;padding:0 6px;background:var(--bg);overflow-x:auto;scrollbar-width:none;white-space:nowrap}
+#bottom::-webkit-scrollbar{display:none}
+#bottom>*{flex:none}
+#bottom button{padding:4px 7px;font-size:12px}
+#bottomL{grid-column:1/2;background:var(--bg)}
+#bottomR{grid-column:3/5;background:var(--bg);display:flex;align-items:center;padding:0 10px;gap:8px;color:var(--mute);font-size:11px;overflow:hidden;white-space:nowrap}
 #dot{width:7px;height:7px;border-radius:50%;background:var(--mute);flex:none}
 #dot.ok{background:var(--up)}#dot.bad{background:var(--dn)}#dot.delay{background:#f7a600}
-.menu{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px;box-shadow:0 8px 24px #0008;display:none;min-width:220px;max-height:70vh;overflow:auto}
-.menu.open{display:block}
-.menu h4{margin:6px 8px;color:var(--mute);font-weight:400;font-size:11px}
-.menu label{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:4px;cursor:pointer}
-.menu label:hover{background:var(--line)}
-.menu input[type=checkbox]{accent-color:var(--acc);width:16px;height:16px}
-#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:6px;display:none;z-index:30}
+#clock{font-variant-numeric:tabular-nums}
+.pop{position:fixed;z-index:40;background:var(--pop);border-radius:6px;padding:6px 0;box-shadow:0 2px 4px #0006,0 8px 28px #000a;display:none;min-width:200px;max-height:80vh;overflow:auto}
+.pop.open{display:block}
+.pop .it{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.pop .it:hover{background:var(--hov)}
+.pop .it.on{color:var(--acc)}
+.pop .it kbd{margin-left:auto;padding-left:16px;color:var(--mute);font-size:11px;font-family:inherit}
+.pop .hd{padding:8px 14px 4px;color:var(--mute);font-size:11px}
+.pop hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.modal{position:fixed;inset:0;z-index:50;background:#0009;display:none;align-items:flex-start;justify-content:center;padding-top:8vh}
+.modal.open{display:flex}
+.dlg{background:var(--pop);border-radius:8px;width:min(560px,94vw);max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 40px #000c}
+.dlg header{display:flex;align-items:center;padding:14px 16px;font-size:18px;font-weight:600}
+.dlg header button{margin-left:auto;font-size:18px}
+.dlg .srch{padding:0 16px 10px}
+.dlg .srch input{width:100%}
+.dlg .body{overflow-y:auto;padding-bottom:8px}
+.dlg .li{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 16px;cursor:pointer}
+.dlg .li:hover{background:var(--hov)}
+.dlg .li small{color:var(--mute)}
+.dlg .sec{padding:10px 16px 4px;color:var(--mute);font-size:11px;text-transform:uppercase}
+.dlg .act{display:flex;gap:6px;align-items:center}
+.dlg .act input{width:120px;padding:5px 8px;font-size:12px}
+.dlg .frm{padding:6px 16px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.dlg .frm input[type=color]{width:44px;height:30px;padding:0;border:0}
+#dtb{position:absolute;z-index:30;top:10px;left:50%;transform:translateX(-50%);background:var(--pop);border-radius:6px;box-shadow:0 4px 18px #000a;display:none;align-items:center;padding:3px}
+#dtb.open{display:flex}
+#dtb button{height:32px;padding:0 8px}
+#dtb .sw{width:18px;height:18px;border-radius:3px;border:1px solid #fff4}
+#toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);background:var(--pop);padding:8px 14px;border-radius:6px;display:none;z-index:60;box-shadow:0 4px 18px #000a}
+#hint{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:var(--acc);color:#fff;padding:5px 12px;border-radius:4px;font-size:12px;display:none;z-index:25;pointer-events:none;white-space:nowrap}
 @media(max-width:900px){
-  #app,#app.nowl{grid-template-columns:40px 1fr}
-  #wl{position:fixed;top:44px;right:0;bottom:26px;width:min(340px,92vw);z-index:15;box-shadow:-8px 0 24px #0008}
+  #app,#app.nowl{grid-template-columns:42px 1fr 0 0}
+  #rstrip{display:none}
+  #wl{position:fixed;top:42px;right:0;bottom:32px;width:min(340px,92vw);z-index:35;box-shadow:-8px 0 24px #000a;border-radius:0;margin:0}
   #app:not(.wlopen) #wl{display:none}
-  #app.wlopen #wl{display:block}
-  #left button{width:34px;height:32px}#custom{width:100px}
+  #app.wlopen #wl{display:flex}
+  .tg{width:40px}.tg>button:first-child{width:34px;height:34px}
+  #bottomR{display:none}#bottom{grid-column:2/5}
+  .hidem{display:none!important}
 }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="top">
-    <span id="symName">—</span>
+    <button id="symBtn" title="Iskanje simbola"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><span id="symName">—</span></button>
     <span id="price">—</span><span id="chg"></span>
-    <div class="sep"></div>
-    <div id="tfs" style="display:flex;gap:1px"></div>
-    <div class="sep"></div>
-    <button id="indBtn">ƒx Indikatorji</button>
-    <button id="snap" title="Posnetek grafa (PNG)">📷</button>
-    <button id="tzBtn" title="Časovni pas"></button>
-    <input id="custom" placeholder="Deribit instrument…" aria-label="Poljuben Deribit instrument" autocomplete="off" spellcheck="false">
-    <button id="wlBtn" title="Watchlist">☰ Watchlist</button>
+    <div class="vs"></div>
+    <div id="tfFav" style="display:flex"></div>
+    <button id="tfMore" title="Interval" data-popbtn="1"><span class="caret">▼</span></button>
+    <div class="vs"></div>
+    <button id="ctBtn" title="Vrsta grafa" data-popbtn="1"></button>
+    <div class="vs"></div>
+    <button id="indBtn" title="Indikatorji ( / )"><svg class="i" viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 8-9"/><path d="M15 6h5v5"/></svg><span class="hidem">Indikatorji</span></button>
+    <div class="vs"></div>
+    <button id="undoBtn" title="Razveljavi (Ctrl+Z)"><svg class="i" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-4"/></svg></button>
+    <button id="redoBtn" title="Uveljavi (Ctrl+Y)"><svg class="i" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h4"/></svg></button>
+    <div class="grow"></div>
+    <button id="setBtn" title="Nastavitve"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
+    <button id="fsBtn" title="Celozaslonski način"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+    <button id="snap" title="Posnetek grafa (PNG)"><svg class="i" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+    <button id="wlBtnM" title="Watchlist" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></button>
   </div>
   <div id="left"></div>
-  <div id="chart"><div id="k"></div></div>
-  <div id="wl"></div>
-  <div id="status"><span id="dot"></span><span id="st">Nalagam…</span><span id="info" style="margin-left:auto"></span></div>
+  <div id="chart"><div id="k"></div><div id="dtb"></div><div id="hint"></div></div>
+  <div id="wl">
+    <div class="wlTop"><b>Watchlist</b><button id="wlSearch" title="Poišči / dodaj simbol"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
+    <div class="wlh"><span>Simbol</span><span style="text-align:right">Zadnja</span><span style="text-align:right">Spr. %</span></div>
+    <div class="wlList" id="wlList"></div>
+  </div>
+  <div id="rstrip">
+    <button id="wlBtn" class="on" title="Watchlist"><svg class="i" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></button>
+  </div>
+  <div id="bottomL"></div>
+  <div id="bottom">
+    <div id="ranges" style="display:flex"></div>
+    <div class="vs"></div>
+    <span id="dot"></span>&nbsp;<span id="st" style="color:var(--mute);font-size:11px">Nalagam…</span>
+    <div class="grow"></div>
+    <button id="clockBtn" title="Časovni pas" data-popbtn="1"><span id="clock"></span></button>
+    <div class="vs"></div>
+    <button id="pctBtn" title="Odstotna lestvica">%</button>
+    <button id="logBtn" title="Logaritemska lestvica">log</button>
+    <button id="autoBtn" class="on" title="Samodejno prilagodi">auto</button>
+  </div>
+  <div id="bottomR"><span id="info"></span></div>
 </div>
-<div class="menu" id="indMenu"></div>
+<div class="pop" id="pop"></div>
+<div class="modal" id="modal"><div class="dlg" id="dlg"></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/klinecharts@10.1.0/dist/umd/klinecharts.min.js"></script>
@@ -101,47 +172,58 @@ const LS = {
 };
 const toast = t => { const el=$('#toast'); el.textContent=t; el.style.display='block'; clearTimeout(toast.t); toast.t=setTimeout(()=>el.style.display='none',2200) };
 const fmt = (v, pp) => v==null||isNaN(v) ? '—' : Number(v).toLocaleString('en-US',{minimumFractionDigits:pp,maximumFractionDigits:pp});
-const ppFor = v => v==null ? 2 : v < 5 ? 4 : v < 50 ? 3 : 2;
+const ppFor = v => v==null ? 2 : Math.abs(v) < 5 ? 4 : Math.abs(v) < 50 ? 3 : 2;
 const agoTxt = ms => { const m=Math.round((Date.now()-ms)/6e4); return m<1?'pravkar':m<60?m+' min nazaj':m<1440?Math.round(m/60)+' h nazaj':Math.round(m/1440)+' dni nazaj' };
+const SV = p => '<svg class="i" viewBox="0 0 24 24">'+p+'</svg>';
 
-/* ---------- časovni okvirji ---------- */
+/* ---------- intervali ---------- */
 const TFS = [
-  {k:'1m',res:'1',ms:6e4,p:{type:'minute',span:1},dv:'60'},
-  {k:'5m',res:'5',ms:3e5,p:{type:'minute',span:5}},
-  {k:'15m',res:'15',ms:9e5,p:{type:'minute',span:15},y:'15m'},
-  {k:'30m',res:'30',ms:18e5,p:{type:'minute',span:30}},
-  {k:'1h',res:'60',ms:36e5,p:{type:'hour',span:1},dv:'3600',y:'1h'},
-  {k:'2h',res:'120',ms:72e5,p:{type:'hour',span:2}},
-  {k:'4h',res:'60',ms:144e5,p:{type:'hour',span:4},agg:4,y:'1h'},
-  {k:'12h',res:'720',ms:432e5,p:{type:'hour',span:12},dv:'43200'},
-  {k:'1D',res:'1D',ms:864e5,p:{type:'day',span:1},dv:'1D',y:'1d'},
-  {k:'1W',res:'1D',ms:6048e5,p:{type:'week',span:1},dv:'1D',week:true,y:'1d'}
+  {k:'1m',l:'1 minuta',res:'1',ms:6e4,p:{type:'minute',span:1},dv:'60'},
+  {k:'3m',l:'3 minute',res:'3',ms:18e4,p:{type:'minute',span:3}},
+  {k:'5m',l:'5 minut',res:'5',ms:3e5,p:{type:'minute',span:5}},
+  {k:'15m',l:'15 minut',res:'15',ms:9e5,p:{type:'minute',span:15},y:'15m'},
+  {k:'30m',l:'30 minut',res:'30',ms:18e5,p:{type:'minute',span:30}},
+  {k:'1h',l:'1 ura',res:'60',ms:36e5,p:{type:'hour',span:1},dv:'3600',y:'1h'},
+  {k:'2h',l:'2 uri',res:'120',ms:72e5,p:{type:'hour',span:2}},
+  {k:'4h',l:'4 ure',res:'60',ms:144e5,p:{type:'hour',span:4},agg:'4h',y:'1h'},
+  {k:'12h',l:'12 ur',res:'720',ms:432e5,p:{type:'hour',span:12},dv:'43200'},
+  {k:'D',l:'1 dan',res:'1D',ms:864e5,p:{type:'day',span:1},dv:'1D',y:'1d'},
+  {k:'W',l:'1 teden',res:'1D',ms:6048e5,p:{type:'week',span:1},dv:'1D',agg:'W',y:'1d'},
+  {k:'M',l:'1 mesec',res:'1D',ms:2592e6,p:{type:'month',span:1},dv:'1D',agg:'M',y:'1d'}
 ];
-const tfOf = k => TFS.find(t=>t.k===k);
+const FAV = ['15m','1h','4h','D','W','M'];
+const tfOf = k => TFS.find(t=>t.k===k) || TFS.find(t=>t.k==={'1D':'D','1W':'W'}[k]);
 const allowedTf = (s, t) => s.src==='yahoo' ? !!t.y : s.dvol ? !!t.dv : true;
 
 /* ---------- simboli ---------- */
 let WL = [], META = {symbols:{}}, SYM = {};
-function addSym(it){
-  const s = {id:it.id, name:it.name||it.id, src:it.src||'yahoo'};
+function addSym(it, group){
+  const s = {id:it.id, name:it.name||it.id, src:it.src||'yahoo', group:group||''};
   if (s.src==='deribit'){ s.inst=it.inst; if (it.inst.startsWith('DVOL:')) s.dvol=it.inst.slice(5); s.pp = s.dvol?2:/^ETH/.test(it.inst)?2:/-[CP]$/.test(it.inst)?4:1 }
   SYM[s.id]=s; return s;
 }
-const symOf = id => SYM[id] || addSym({id, src:'deribit', inst:id});
+const symOf = id => SYM[id] || addSym({id, src:'deribit', inst:id}, 'Deribit');
 
+let inds0 = LS.get('inds2', null);
+if (!inds0) inds0 = (LS.get('inds',['VOL'])||[]).map(n=>({name:n}));
 let state = {
   sym: LS.get('sym2','BTCUSD'),
-  tf: LS.get('tf','1D'),
+  tf: (tfOf(LS.get('tf','D'))||tfOf('D')).k,
   tz: LS.get('tz','Europe/Ljubljana'),
-  inds: LS.get('inds',['VOL']),
+  inds: inds0,
   color: LS.get('color','#2962ff'),
-  magnet: LS.get('magnet',false),
-  closed: LS.get('closedGroups',[])
+  magnet: LS.get('magnet2','off'),
+  stay: LS.get('stay',false),
+  ct: LS.get('ct','candle_solid'),
+  cursor: LS.get('cursor','cross'),
+  axis: LS.get('axis','normal'),
+  closed: LS.get('closedGroups',[]),
+  upC: LS.get('upC','#089981'), dnC: LS.get('dnC','#f23645'), grid: LS.get('grid',true)
 };
 
 /* ---------- Deribit WebSocket ---------- */
 const WS_URL = 'wss://www.deribit.com/ws/api/v2';
-let ws, wsReady, rid = 1, pending = {}, subs = new Map(), chartChs = new Set(), retry = 0, wsOk = false;
+let ws, wsReady, rid = 1, pending = {}, subs = new Map(), chartChs = new Set(), wlChs = new Set(), retry = 0, wsOk = false;
 function setStatus(t, cls){ $('#st').textContent=t; $('#dot').className=cls||'' }
 function connect(){
   wsReady = new Promise(res => {
@@ -172,6 +254,8 @@ function unsubscribeChart(){ const chs=[...chartChs].filter(c=>!wlChs.has(c)); c
 
 /* ---------- podatki ---------- */
 const weekStart = ts => { const d=new Date(ts); const day=(d.getUTCDay()+6)%7; return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())-day*864e5 };
+const monthStart = ts => { const d=new Date(ts); return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1) };
+const keyFns = {W:weekStart, M:monthStart, '4h': ts => Math.floor(ts/144e5)*144e5};
 function bucket(bars, keyFn){
   const out=[]; let w=null;
   for (const d of bars){ const k=keyFn(d.timestamp);
@@ -179,93 +263,181 @@ function bucket(bars, keyFn){
     else { w.high=Math.max(w.high,d.high); w.low=Math.min(w.low,d.low); w.close=d.close; w.volume+=d.volume||0 } }
   return out;
 }
-const toWeeks = bars => bucket(bars, weekStart);
-const to4h = bars => bucket(bars, ts => Math.floor(ts/144e5)*144e5);
-
+function heikin(bars){
+  const out=[]; let po, pc;
+  for (const b of bars){ const c=(b.open+b.high+b.low+b.close)/4; const o = po==null ? (b.open+b.close)/2 : (po+pc)/2;
+    out.push({...b, open:o, close:c, high:Math.max(b.high,o,c), low:Math.min(b.low,o,c)}); po=o; pc=c }
+  return out;
+}
+let rawBars = [];
 async function fetchDeribit(s, tf, end){
-  const start = end - (tf.week?864e5:tf.ms)*1000;
-  if (s.dvol){
-    const r = await rpc('public/get_volatility_index_data',{currency:s.dvol,start_timestamp:start,end_timestamp:end,resolution:tf.dv});
-    return (r.data||[]).map(d=>({timestamp:d[0],open:d[1],high:d[2],low:d[3],close:d[4],volume:0})).sort((a,b)=>a.timestamp-b.timestamp);
+  const span = tf.agg==='W'||tf.agg==='M' ? 864e5 : tf.agg==='4h' ? 36e5 : tf.ms;
+  const pages = tf.agg==='M' ? 3 : 1;
+  let out = [], e = end;
+  for (let i=0;i<pages;i++){
+    const start = e - span*1000; let part;
+    if (s.dvol){
+      const r = await rpc('public/get_volatility_index_data',{currency:s.dvol,start_timestamp:start,end_timestamp:e,resolution:tf.dv});
+      part = (r.data||[]).map(d=>({timestamp:d[0],open:d[1],high:d[2],low:d[3],close:d[4],volume:0})).sort((a,b)=>a.timestamp-b.timestamp);
+    } else {
+      const r = await rpc('public/get_tradingview_chart_data',{instrument_name:s.inst,start_timestamp:start,end_timestamp:e,resolution:tf.res});
+      part = (!r || r.status==='no_data' || !r.ticks) ? [] : r.ticks.map((t,i)=>({timestamp:t,open:r.open[i],high:r.high[i],low:r.low[i],close:r.close[i],volume:r.volume[i]}));
+    }
+    if (!part.length) break;
+    out = part.concat(out.filter(b=>b.timestamp>part[part.length-1].timestamp)); e = part[0].timestamp-1;
   }
-  const r = await rpc('public/get_tradingview_chart_data',{instrument_name:s.inst,start_timestamp:start,end_timestamp:end,resolution:tf.res});
-  if (!r || r.status==='no_data' || !r.ticks) return [];
-  return r.ticks.map((t,i)=>({timestamp:t,open:r.open[i],high:r.high[i],low:r.low[i],close:r.close[i],volume:r.volume[i]}));
+  return out;
 }
 const yCache = {};
 async function fetchYahoo(s, tf){
   const url = 'data/'+s.id.replace(/[^A-Za-z0-9._-]/g,'_')+'_'+tf.y+'.json?v='+META.updated;
-  if (!yCache[url]){ const r = await fetch(url); if (!r.ok) throw {message:'ni datoteke '+s.id+'_'+tf.y}; yCache[url] = await r.json() }
+  if (!yCache[url]){ const r = await fetch(url); if (!r.ok) throw {message:'ni datoteke za '+s.id}; yCache[url] = await r.json() }
   const d = yCache[url];
-  let bars = d.t.map((t,i)=>({timestamp:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i],volume:d.v[i]}));
-  if (tf.agg) bars = to4h(bars);
-  if (tf.week) bars = toWeeks(bars);
-  return bars;
+  return d.t.map((t,i)=>({timestamp:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i],volume:d.v[i]}));
 }
-let curDays = [];
+let curRaw = [];
+let pendingRange = null;
 
 const loader = {
   getBars: async ({type, timestamp, callback}) => {
     const s = symOf(state.sym), tf = tfOf(state.tf);
-    if (type==='backward' || (type==='forward' && s.src==='yahoo')) { callback([], {forward:false, backward:false}); return }
+    const noMore = s.src==='yahoo' || tf.agg==='M';
+    if (type==='backward' || (type==='forward' && noMore)) { callback([], {forward:false, backward:false}); return }
     try {
-      let bars;
       if (s.src==='yahoo' && !(META.symbols[s.id]||{}).ok) { updateStatus(); callback([], false); return }
-      if (s.src==='yahoo') bars = await fetchYahoo(s, tf);
-      else {
-        const end = type==='forward' && timestamp ? timestamp-1 : Date.now();
-        bars = await fetchDeribit(s, tf, end);
-        if (tf.week){ if (type==='init') curDays = bars.filter(b=>weekStart(b.timestamp)===weekStart(Date.now())); bars = toWeeks(bars);
-          if (type==='forward' && timestamp) bars = bars.filter(b=>b.timestamp<timestamp) }
-      }
+      let base;
+      if (s.src==='yahoo') base = await fetchYahoo(s, tf);
+      else base = await fetchDeribit(s, tf, type==='forward' && timestamp ? timestamp-1 : Date.now());
+      let bars = base;
+      if (tf.agg){ const kf=keyFns[tf.agg]; bars = bucket(base, kf);
+        if (type==='init'){ const lk = bars.length ? bars[bars.length-1].timestamp : 0; curRaw = base.filter(b=>kf(b.timestamp)===lk) }
+        if (type==='forward' && timestamp) bars = bars.filter(b=>b.timestamp<timestamp) }
+      rawBars = type==='init' ? bars.slice() : bars.concat(rawBars);
+      const out = state.ct==='heikin' ? heikin(rawBars).slice(0, bars.length) : bars;
       if (type==='init'){ if (!bars.length) setStatus('Ni podatkov za '+s.id,'bad'); else { headerPrice(); updateStatus() } }
-      callback(bars, {forward: s.src!=='yahoo' && bars.length>0, backward:false});
-      if (type==='init') setTimeout(restoreDrawings, 0);
+      callback(out, {forward: !noMore && bars.length>0, backward:false});
+      if (type==='init') setTimeout(()=>{ restoreDrawings(); applyRange() }, 0);
     } catch(e){ setStatus('Napaka: '+(e.message||e)+' ('+s.id+')','bad'); callback([], false) }
   },
   subscribeBar: ({callback}) => {
     unsubscribeChart();
     const s = symOf(state.sym), tf = tfOf(state.tf);
     if (s.src!=='deribit') return;
+    const push = bar => {
+      if (tf.agg){ const kf=keyFns[tf.agg]; const i=curRaw.findIndex(x=>x.timestamp===bar.timestamp); if (i>=0) curRaw[i]=bar; else curRaw.push(bar);
+        curRaw = curRaw.filter(x=>kf(x.timestamp)===kf(bar.timestamp)); bar = bucket(curRaw, kf)[0] }
+      const last = rawBars[rawBars.length-1];
+      if (last && bar.timestamp < last.timestamp) return;
+      if (last && bar.timestamp===last.timestamp) rawBars[rawBars.length-1]=bar; else rawBars.push(bar);
+      if (state.ct==='heikin'){ const n=rawBars.length, w=rawBars.slice(Math.max(0,n-80)); bar = heikin(w)[w.length-1] }
+      callback(bar);
+    };
     if (s.dvol){
       subscribe('deribit_volatility_index.'+s.dvol.toLowerCase()+'_usd', d => {
-        onDvol(s, d);
-        const list = chart.getDataList(); const last = list[list.length-1]; if (!last || symOf(state.sym)!==s) return;
-        const v = d.volatility, k = tf.week ? weekStart(d.timestamp) : Math.floor(d.timestamp/tf.ms)*tf.ms;
-        const bar = k===last.timestamp ? {...last, high:Math.max(last.high,v), low:Math.min(last.low,v), close:v} : {timestamp:k, open:v, high:v, low:v, close:v, volume:0};
-        if (bar.timestamp>=last.timestamp) callback(bar);
+        onDvol(s, d); if (symOf(state.sym)!==s) return;
+        const v=d.volatility, unit = tf.agg ? 864e5 : tf.ms, k=Math.floor(d.timestamp/unit)*unit;
+        const src = tf.agg ? curRaw : rawBars, last = src[src.length-1];
+        const bar = last && last.timestamp===k ? {...last, high:Math.max(last.high,v), low:Math.min(last.low,v), close:v} : {timestamp:k, open:v, high:v, low:v, close:v, volume:0};
+        push(bar);
       }, true);
       return;
     }
     subscribe('chart.trades.'+s.inst+'.'+tf.res, d => {
-      let bar = {timestamp:d.tick,open:d.open,high:d.high,low:d.low,close:d.close,volume:d.volume};
-      if (tf.week){ const i=curDays.findIndex(x=>x.timestamp===bar.timestamp); if (i>=0) curDays[i]=bar; else curDays.push(bar);
-        curDays = curDays.filter(x=>weekStart(x.timestamp)===weekStart(bar.timestamp)); bar = toWeeks(curDays)[0] }
-      callback(bar);
-      if (!wlChs.size || !live[s.id]) { live[s.id] = {...(live[s.id]||{}), last: bar.close}; headerPrice() }
+      push({timestamp:d.tick,open:d.open,high:d.high,low:d.low,close:d.close,volume:d.volume});
+      if (!wlChs.has('ticker.'+s.inst+'.100ms')) { live[s.id] = {...(live[s.id]||{}), last: d.close}; headerPrice() }
     }, true);
   },
   unsubscribeBar: () => unsubscribeChart()
 };
 
+/* ---------- lastne risbe ---------- */
+const colOf = o => (o.styles && o.styles.line && o.styles.line.color) || '#2962ff';
+const lbl = c => ({style:'fill', color:'#fff', size:12, backgroundColor:c, borderRadius:3, paddingLeft:6, paddingRight:6, paddingTop:4, paddingBottom:4, borderSize:0});
+const durTxt = ms => { ms=Math.abs(ms); const d=Math.floor(ms/864e5), h=Math.floor(ms%864e5/36e5), m=Math.floor(ms%36e5/6e4); return ((d?d+'d ':'')+(h?h+'h ':'')+(!d&&m?m+'m':'')).trim() || '0m' };
+const pfmt = (chart, v) => { const p=(chart.getSymbol()||{}).pricePrecision; return fmt(v, p==null?2:p) };
+const reg = o => klinecharts.registerOverlay(o);
+reg({ name:'rect', totalStep:3, needDefaultPointFigure:true, needDefaultXAxisFigure:true, needDefaultYAxisFigure:true,
+  createPointFigures:({overlay, coordinates}) => { if (coordinates.length<2) return []; const [a,b]=coordinates, c=colOf(overlay);
+    return [{type:'rect', attrs:{x:Math.min(a.x,b.x), y:Math.min(a.y,b.y), width:Math.abs(b.x-a.x), height:Math.abs(b.y-a.y)}, styles:{style:'stroke_fill', color:c+'26', borderColor:c, borderSize:1}}] } });
+reg({ name:'circle', totalStep:3, needDefaultPointFigure:true,
+  createPointFigures:({overlay, coordinates}) => { if (coordinates.length<2) return []; const [a,b]=coordinates, c=colOf(overlay);
+    return [{type:'circle', attrs:{x:a.x, y:a.y, r:Math.hypot(b.x-a.x,b.y-a.y)}, styles:{style:'stroke_fill', color:c+'26', borderColor:c, borderSize:1}}] } });
+reg({ name:'triangle', totalStep:4, needDefaultPointFigure:true,
+  createPointFigures:({overlay, coordinates}) => { const c=colOf(overlay); if (coordinates.length<2) return [];
+    if (coordinates.length===2) return [{type:'line', attrs:{coordinates}, styles:{color:c}}];
+    return [{type:'polygon', attrs:{coordinates}, styles:{style:'stroke_fill', color:c+'26', borderColor:c, borderSize:1}}] } });
+reg({ name:'textBox', totalStep:2, needDefaultPointFigure:true,
+  createPointFigures:({overlay, coordinates}) => { const c=colOf(overlay);
+    return [{type:'text', attrs:{x:coordinates[0].x, y:coordinates[0].y, text:String(overlay.extendData||'Besedilo'), align:'left', baseline:'middle'}, styles:{...lbl(c), size:14}}] } });
+function measureFigs(chart, overlay, coordinates, mode){
+  if (coordinates.length<2) return [];
+  const [a,b]=coordinates, [pa,pb]=overlay.points; if (!pa||!pb) return [];
+  const up = pb.value>=pa.value, c = mode==='date' ? colOf(overlay) : (up?'#2962ff':'#f23645');
+  const x1=Math.min(a.x,b.x), x2=Math.max(a.x,b.x), y1=Math.min(a.y,b.y), y2=Math.max(a.y,b.y);
+  const figs=[{type:'rect', attrs:{x:x1, y:y1, width:x2-x1, height:y2-y1}, styles:{style:'fill', color:c+'22'}, ignoreEvent:true}];
+  const mx=(a.x+b.x)/2, my=(a.y+b.y)/2, lines=[];
+  if (mode!=='date') lines.push({coordinates:[{x:mx,y:a.y},{x:mx,y:b.y}]});
+  if (mode!=='price') lines.push({coordinates:[{x:a.x,y:my},{x:b.x,y:my}]});
+  figs.push({type:'line', attrs:lines, styles:{color:c, size:1}});
+  const dv=pb.value-pa.value, pct=pa.value?dv/pa.value*100:0, bars=(pb.dataIndex??0)-(pa.dataIndex??0), dt=(pb.timestamp||0)-(pa.timestamp||0);
+  const parts=[];
+  if (mode!=='date') parts.push(pfmt(chart,dv)+' ('+(pct>=0?'+':'')+pct.toFixed(2)+'%)');
+  if (mode!=='price') parts.push(bars+' sveč, '+durTxt(dt));
+  const top = up||mode==='date';
+  figs.push({type:'text', attrs:{x:mx, y: top ? y1-6 : y2+6, text:parts.join('  ·  '), align:'center', baseline: top?'bottom':'top'}, styles:lbl(c), ignoreEvent:true});
+  return figs;
+}
+reg({ name:'priceRange', totalStep:3, needDefaultPointFigure:true, createPointFigures:({chart,overlay,coordinates})=>measureFigs(chart,overlay,coordinates,'price') });
+reg({ name:'dateRange', totalStep:3, needDefaultPointFigure:true, createPointFigures:({chart,overlay,coordinates})=>measureFigs(chart,overlay,coordinates,'date') });
+reg({ name:'datePriceRange', totalStep:3, needDefaultPointFigure:true, createPointFigures:({chart,overlay,coordinates})=>measureFigs(chart,overlay,coordinates,'both') });
+function positionFigs(chart, overlay, coordinates, isLong){
+  if (coordinates.length<2) return [];
+  const pts=overlay.points, e=coordinates[0], t=coordinates[1];
+  if (!pts[0]||!pts[1]) return [];
+  const st = coordinates[2] || {x:t.x, y:e.y-(t.y-e.y)};
+  const x1=Math.min(e.x,t.x), w=Math.max(Math.abs(t.x-e.x),30);
+  const pe=pts[0].value, pt=pts[1].value, ps = pts[2] ? pts[2].value : pe-(pt-pe);
+  const figs=[
+    {type:'rect', attrs:{x:x1, y:Math.min(e.y,t.y), width:w, height:Math.abs(t.y-e.y)}, styles:{style:'fill', color:'rgba(8,153,129,.25)'}},
+    {type:'rect', attrs:{x:x1, y:Math.min(e.y,st.y), width:w, height:Math.abs(st.y-e.y)}, styles:{style:'fill', color:'rgba(242,54,69,.25)'}},
+    {type:'line', attrs:{coordinates:[{x:x1,y:e.y},{x:x1+w,y:e.y}]}, styles:{color:'#787b86', size:1}}
+  ];
+  const tp=(pt-pe)/pe*100, sp=(ps-pe)/pe*100, rr = Math.abs(ps-pe) ? Math.abs(pt-pe)/Math.abs(ps-pe) : 0, cx=x1+w/2;
+  figs.push({type:'text', attrs:{x:cx, y:t.y, text:'Cilj: '+pfmt(chart,pt)+' ('+(tp>=0?'+':'')+tp.toFixed(2)+'%)', align:'center', baseline: t.y<e.y?'bottom':'top'}, styles:lbl('#089981'), ignoreEvent:true});
+  figs.push({type:'text', attrs:{x:cx, y:st.y, text:'Stop: '+pfmt(chart,ps)+' ('+(sp>=0?'+':'')+sp.toFixed(2)+'%)', align:'center', baseline: st.y<e.y?'bottom':'top'}, styles:lbl('#f23645'), ignoreEvent:true});
+  figs.push({type:'text', attrs:{x:cx, y:e.y, text:(isLong?'Long ':'Short ')+pfmt(chart,pe)+'  ·  R:R '+rr.toFixed(2), align:'center', baseline:'middle'}, styles:lbl('#434651'), ignoreEvent:true});
+  return figs;
+}
+reg({ name:'longPosition', totalStep:4, needDefaultPointFigure:true, needDefaultYAxisFigure:true, createPointFigures:({chart,overlay,coordinates})=>positionFigs(chart,overlay,coordinates,true) });
+reg({ name:'shortPosition', totalStep:4, needDefaultPointFigure:true, needDefaultYAxisFigure:true, createPointFigures:({chart,overlay,coordinates})=>positionFigs(chart,overlay,coordinates,false) });
+
 /* ---------- graf ---------- */
 const chart = klinecharts.init('k', {styles:'dark', timezone: state.tz, locale:'en-US'});
-chart.setStyles({
-  grid:{horizontal:{color:'#1f2430'},vertical:{color:'#1f2430'}},
-  candle:{bar:{upColor:'#089981',downColor:'#f23645',noChangeColor:'#787b86',upBorderColor:'#089981',downBorderColor:'#f23645',upWickColor:'#089981',downWickColor:'#f23645'},
-    priceMark:{last:{upColor:'#089981',downColor:'#f23645'}},tooltip:{showRule:'always'}},
-  indicator:{ohlc:{upColor:'#089981',downColor:'#f23645'},bars:[{upColor:'rgba(8,153,129,.5)',downColor:'rgba(242,54,69,.5)',noChangeColor:'#787b86'}]},
-  xAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
-  yAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
-  separator:{color:'#2a2e39'},
-  crosshair:{horizontal:{line:{color:'#787b86'},text:{backgroundColor:'#363a45',borderColor:'#363a45'}},vertical:{line:{color:'#787b86'},text:{backgroundColor:'#363a45',borderColor:'#363a45'}}}
-});
+function applyStyles(){
+  const gc = state.grid ? '#1f2430' : 'rgba(0,0,0,0)', u=state.upC, d=state.dnC;
+  const area = state.ct==='area' || state.ct==='line', lines = state.cursor==='cross';
+  chart.setStyles({
+    grid:{horizontal:{color:gc},vertical:{color:gc}},
+    candle:{type: area?'area':(state.ct==='heikin'?'candle_solid':state.ct),
+      bar:{upColor:u,downColor:d,noChangeColor:'#787b86',upBorderColor:u,downBorderColor:d,upWickColor:u,downWickColor:d},
+      area:{lineColor:'#2962ff',lineSize:2,backgroundColor: state.ct==='line' ? [{offset:0,color:'rgba(0,0,0,0)'},{offset:1,color:'rgba(0,0,0,0)'}] : [{offset:0,color:'rgba(41,98,255,0.01)'},{offset:1,color:'rgba(41,98,255,0.25)'}]},
+      priceMark:{last:{upColor:u,downColor:d}},tooltip:{showRule:'always'}},
+    indicator:{ohlc:{upColor:u,downColor:d},bars:[{upColor:u+'80',downColor:d+'80',noChangeColor:'#787b86'}]},
+    xAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
+    yAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
+    separator:{color:'#2a2e39'},
+    crosshair:{show: state.cursor!=='arrow', horizontal:{line:{show:lines,color:'#787b86'},text:{backgroundColor:'#363a45',borderColor:'#363a45'}},vertical:{line:{show:lines,color:'#787b86'},text:{backgroundColor:'#363a45',borderColor:'#363a45'}}}
+  });
+}
+applyStyles();
 chart.setDataLoader(loader);
 new ResizeObserver(()=>chart.resize()).observe($('#chart'));
 
+/* ---------- glava / status ---------- */
+const live = {};
 function quote(s){
-  if (s.src==='deribit'){ const l=live[s.id]||{}; return {last:l.last, chg:l.chg, pp:s.pp, live:wsOk} }
-  const m = META.symbols[s.id]||{}; return {last:m.last, chg:m.chg, pp:ppFor(m.last), cur:m.currency, ex:m.exchange, y:m.yahoo}
+  if (s.src==='deribit'){ const l=live[s.id]||{}; return {last:l.last, chg:l.chg, pp:s.pp} }
+  const m = META.symbols[s.id]||{}; return {last:m.last, chg:m.chg, pp:ppFor(m.last)}
 }
 function headerPrice(){
   const s = symOf(state.sym), q = quote(s);
@@ -277,27 +449,333 @@ function updateStatus(){
   const s = symOf(state.sym);
   if (s.src==='deribit') setStatus(wsOk?'V živo · Deribit':'Povezujem z Deribit…', wsOk?'ok':'bad');
   else { const m=META.symbols[s.id]||{};
-    setStatus(m.ok ? 'Yahoo '+(m.yahoo||'')+(m.exchange?' · '+m.exchange:'')+(m.currency?' · '+m.currency:'')+' · zamik ~30 min · posodobljeno '+agoTxt(META.updated) : 'Ni podatkov za '+s.id+' (robot ga ni našel)', m.ok?'delay':'bad') }
-  const tf=tfOf(state.tf); $('#info').textContent = s.name+' · '+tf.k;
+    setStatus(m.ok ? 'Yahoo '+(m.yahoo||'')+' · zamik ~30 min · '+agoTxt(META.updated) : 'Ni podatkov za '+s.id, m.ok?'delay':'bad') }
+  $('#info').textContent = s.name;
 }
-
 function load(){
   const s = symOf(state.sym);
-  let tf = tfOf(state.tf) || tfOf('1D');
-  if (!allowedTf(s, tf)){ state.tf = s.dvol ? '1h' : '1D'; tf = tfOf(state.tf) }
+  let tf = tfOf(state.tf);
+  if (!allowedTf(s, tf)){ state.tf = s.dvol ? '1h' : 'D'; tf = tfOf(state.tf) }
+  closeDtb(); selectedId=null;
   chart.removeOverlay({groupId:'d'});
   chart.setSymbol({ticker:s.id, pricePrecision: s.pp!=null ? s.pp : ppFor((META.symbols[s.id]||{}).last), volumePrecision: 0});
   chart.setPeriod(tf.p);
   renderTfs(); headerPrice(); updateStatus(); markSel();
+  undoStack=[]; redoStack=[];
   LS.set('sym2',state.sym); LS.set('tf',state.tf);
 }
 function pick(id){ state.sym=id; load(); $('#app').classList.remove('wlopen') }
 
+/* ---------- popup meniji ---------- */
+const pop = $('#pop');
+function openPop(anchor, html, onClick, place){
+  pop.innerHTML = html; pop.classList.add('open');
+  const r = anchor.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let x = place==='right' ? r.right+4 : r.left, y = place==='right' ? r.top : place==='up' ? r.top-ph-4 : r.bottom+4;
+  x = Math.max(4, Math.min(x, innerWidth-pw-4)); y = Math.max(4, Math.min(y, innerHeight-ph-4));
+  pop.style.left = x+'px'; pop.style.top = y+'px';
+  pop.onclick = e => { const it = e.target.closest('[data-v]'); if (!it) return; closePop(); onClick(it.dataset.v) };
+}
+function openPopAt(x, y, html, onClick){ openPop({getBoundingClientRect:()=>({left:x,right:x,top:y,bottom:y})}, html, onClick) }
+const closePop = () => pop.classList.remove('open');
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#pop') && !e.target.closest('[data-popbtn]')) closePop() });
+const item = (v, label, icon, on, kbd) => '<div class="it'+(on?' on':'')+'" data-v="'+esc(v)+'">'+(icon||'')+'<span>'+esc(label)+'</span>'+(kbd?'<kbd>'+esc(kbd)+'</kbd>':'')+'</div>';
+
+/* ---------- modalna okna ---------- */
+const modal = $('#modal'), dlg = $('#dlg');
+function openModal(html){ dlg.innerHTML = html; modal.classList.add('open'); const x=dlg.querySelector('[data-x]'); if (x) x.onclick=closeModal;
+  const i=dlg.querySelector('input[type=search]'); if (i && matchMedia('(pointer:fine)').matches){ i.focus(); const v=i.value; i.value=''; i.value=v } }
+const closeModal = () => modal.classList.remove('open');
+modal.addEventListener('pointerdown', e => { if (e.target===modal) closeModal() });
+
+/* ---------- iskanje simbola ---------- */
+function symbolSearch(initial){
+  openModal('<header>Iskanje simbola<button data-x>✕</button></header><div class="srch"><input type="search" id="ssq" value="'+esc(initial||'')+'" placeholder="Simbol, ime ali Deribit instrument" autocomplete="off" spellcheck="false"></div><div class="body" id="ssl"></div>');
+  const q = $('#ssq'), list = $('#ssl');
+  const render = () => {
+    const t = q.value.trim().toUpperCase(); let h='';
+    for (const s of Object.values(SYM)){
+      if (t && !s.id.toUpperCase().includes(t) && !s.name.toUpperCase().includes(t)) continue;
+      const qq=quote(s);
+      h += '<div class="li" data-id="'+esc(s.id)+'"><div><b>'+esc(s.id)+'</b> <small>'+esc(s.name)+'</small></div><small>'+esc(s.src==='deribit'?'Deribit':s.group||'Yahoo')+' · '+fmt(qq.last,qq.pp)+'</small></div>';
+    }
+    if (t && !SYM[t]) h += '<div class="li" data-id="'+esc(t)+'" data-new="1"><div><b>'+esc(t)+'</b> <small>odpri kot Deribit instrument</small></div><small>Deribit</small></div>';
+    list.innerHTML = h || '<div class="sec">Ni zadetkov</div>';
+  };
+  q.oninput = render; render();
+  q.onkeydown = e => { if (e.key==='Enter'){ const f=list.querySelector('.li'); if (f) f.click() } };
+  list.onclick = e => { const li=e.target.closest('.li'); if (!li) return; const id=li.dataset.id;
+    if (li.dataset.new){ const extra=LS.get('customSyms',[]); if(!extra.includes(id)){ extra.push(id); LS.set('customSyms',extra.slice(-15)) } addSym({id,src:'deribit',inst:id},'Deribit'); renderWL() }
+    closeModal(); pick(id) };
+}
+$('#symBtn').onclick = ()=>symbolSearch(); $('#wlSearch').onclick = ()=>symbolSearch();
+
+/* ---------- intervali ---------- */
+function renderTfs(){
+  const box=$('#tfFav'); box.innerHTML=''; const s=symOf(state.sym);
+  const favs = FAV.includes(state.tf) ? FAV : [...FAV, state.tf];
+  for (const k of favs){ const t=tfOf(k); const b=document.createElement('button'); b.textContent=t.k; b.title=t.l;
+    if (t.k===state.tf) b.className='on'; b.disabled=!allowedTf(s,t); b.onclick=()=>{ state.tf=t.k; load() }; box.appendChild(b) }
+}
+$('#tfMore').onclick = e => { const s=symOf(state.sym);
+  const groups=[['MINUTE',['1m','3m','5m','15m','30m']],['URE',['1h','2h','4h','12h']],['DNEVI',['D','W','M']]];
+  let h=''; for (const [g,ks] of groups){ const vis=ks.filter(k=>allowedTf(s,tfOf(k))); if (!vis.length) continue; h+='<div class="hd">'+g+'</div>'; for (const k of vis){ const t=tfOf(k); h+=item(k, t.l, '', k===state.tf, t.k) } }
+  openPop(e.currentTarget, h, v=>{ state.tf=v; load() }) };
+
+/* ---------- vrsta grafa ---------- */
+const CTS = [
+  ['candle_solid','Sveče', SV('<path d="M8 4v16M16 6v12"/><rect x="6" y="8" width="4" height="8" fill="currentColor"/><rect x="14" y="9" width="4" height="6"/>')],
+  ['candle_up_stroke','Votle sveče', SV('<path d="M8 4v16M16 6v12"/><rect x="6" y="8" width="4" height="8"/><rect x="14" y="9" width="4" height="6" fill="currentColor"/>')],
+  ['ohlc','Bari', SV('<path d="M8 4v16M5 8h3M8 15h3M16 6v12M13 9h3M16 14h3"/>')],
+  ['line','Linija', SV('<path d="M3 17l5-6 4 4 9-10"/>')],
+  ['area','Območje', SV('<path d="M3 17l5-6 4 4 9-10v15H3z" fill="currentColor" fill-opacity=".25"/>')],
+  ['heikin','Heikin Ashi', SV('<path d="M8 4v16M16 6v12"/><rect x="6" y="7" width="4" height="10" fill="currentColor"/><rect x="14" y="9" width="4" height="7" fill="currentColor"/>')]
+];
+function renderCt(){ const c=CTS.find(x=>x[0]===state.ct)||CTS[0]; $('#ctBtn').innerHTML=c[2] }
+$('#ctBtn').onclick = e => openPop(e.currentTarget, CTS.map(c=>item(c[0],c[1],c[2],c[0]===state.ct)).join(''), v=>{
+  const wasHA = state.ct==='heikin'; state.ct=v; LS.set('ct',v); renderCt(); applyStyles(); if (wasHA || v==='heikin') load() });
+
+/* ---------- indikatorji ---------- */
+const IND = [
+  ['MA','Moving Average (MA)',1,[5,10,30,60]],['EMA','Exponential MA (EMA)',1,[21,50,200]],['SMA','Smoothed MA (SMA)',1,[12,2]],
+  ['BOLL','Bollinger Bands',1,[20,2]],['SAR','Parabolic SAR',1,[2,2,20]],['BBI','Bull and Bear Index',1,[3,6,12,24]],['AVP','Average Price',1,[]],
+  ['VOL','Volumen',0,[5,10,20]],['RSI','Relative Strength Index (RSI)',0,[14]],['MACD','MACD',0,[12,26,9]],['KDJ','Stochastic (KDJ)',0,[9,3,3]],
+  ['CCI','Commodity Channel Index (CCI)',0,[20]],['OBV','On Balance Volume (OBV)',0,[30]],['DMI','DMI / ADX',0,[14,6]],['WR','Williams %R',0,[6,10,14]],
+  ['ROC','Rate of Change (ROC)',0,[12,6]],['MTM','Momentum',0,[12,6]],['AO','Awesome Oscillator',0,[5,34]],['TRIX','TRIX',0,[12,9]],
+  ['BIAS','Bias',0,[6,12,24]],['PSY','Psychological Line',0,[12,6]],['VR','Volume Ratio',0,[26,6]],['PVT','Price Volume Trend',0,[]],
+  ['EMV','Ease of Movement',0,[14,9]],['CR','CR',0,[26,10,20,40,60]],['BRAR','BRAR',0,[26]],['DMA','DMA',0,[10,50,10]]
+];
+const indMeta = n => IND.find(x=>x[0]===n);
+const paneOf = n => indMeta(n)[2] ? 'candle_pane' : 'pane_'+n;
+function addInd(o){ const m=indMeta(o.name); if (!m) return; const ci={name:o.name, paneId:paneOf(o.name)};
+  const p = o.params && o.params.length ? o.params : m[3]; if (p.length) ci.calcParams=p; chart.createIndicator(ci, !!m[2]) }
+function rmInd(n){ if (indMeta(n)) chart.removeIndicator({name:n, paneId:paneOf(n)}) }
+const saveInds = () => LS.set('inds2', state.inds);
+function indDialog(){
+  openModal('<header>Indikatorji<button data-x>✕</button></header><div class="srch"><input type="search" id="iq" placeholder="Iskanje" autocomplete="off"></div><div class="body" id="il"></div>');
+  const q=$('#iq'), list=$('#il');
+  const render = () => {
+    const t=q.value.trim().toLowerCase(); let h='';
+    if (state.inds.length && !t){ h+='<div class="sec">Na grafu</div>';
+      for (const o of state.inds){ const m=indMeta(o.name); if(!m) continue;
+        h+='<div class="li" style="cursor:default"><div>'+esc(m[1])+'</div><div class="act"><input type="text" data-p="'+esc(o.name)+'" value="'+esc((o.params||m[3]).join(', '))+'" title="Parametri, ločeni z vejico" '+(m[3].length?'':'disabled')+'><button data-rm="'+esc(o.name)+'" title="Odstrani">✕</button></div></div>' } }
+    h+='<div class="sec">Vgrajeni</div>';
+    for (const m of IND){ if (t && !m[1].toLowerCase().includes(t) && !m[0].toLowerCase().includes(t)) continue;
+      const on=state.inds.some(o=>o.name===m[0]);
+      h+='<div class="li" data-add="'+m[0]+'"><div>'+esc(m[1])+'</div><small>'+(m[2]?'na ceni':'panel')+(on?' · ✓':'')+'</small></div>' }
+    list.innerHTML=h;
+  };
+  q.oninput=render; render();
+  list.onclick = e => {
+    const rm=e.target.closest('[data-rm]'); if (rm){ rmInd(rm.dataset.rm); state.inds=state.inds.filter(o=>o.name!==rm.dataset.rm); saveInds(); render(); return }
+    const ad=e.target.closest('[data-add]'); if (ad){ const n=ad.dataset.add; if (state.inds.some(o=>o.name===n)){ toast('Že na grafu — parametre nastaviš zgoraj'); return }
+      const o={name:n}; addInd(o); state.inds.push(o); saveInds(); toast(indMeta(n)[1]+' dodan'); render() }
+  };
+  list.onchange = e => { const p=e.target.closest('[data-p]'); if (!p) return; const n=p.dataset.p;
+    const vals=p.value.split(/[,\s]+/).map(Number).filter(v=>isFinite(v)&&v>0); if (!vals.length) return;
+    const o=state.inds.find(x=>x.name===n); o.params=vals; saveInds(); chart.overrideIndicator({name:n, paneId:paneOf(n), calcParams:vals}); toast('Parametri posodobljeni') };
+}
+$('#indBtn').onclick = indDialog;
+
+/* ---------- leva orodjarna ---------- */
+const ICON = {
+  cross:SV('<path d="M12 3v18M3 12h18"/>'), dot:SV('<circle cx="12" cy="12" r="2.2" fill="currentColor"/>'), arrow:SV('<path d="M6 3l12 9-5.5 1.2L16 20l-2.5 1-3-6.6L6 18z"/>'),
+  segment:SV('<path d="M4 19L20 5"/><circle cx="4" cy="19" r="1.6"/><circle cx="20" cy="5" r="1.6"/>'), rayLine:SV('<path d="M4 19L22 4"/><circle cx="4" cy="19" r="1.6"/>'),
+  straightLine:SV('<path d="M2 21L22 3"/>'), horizontalStraightLine:SV('<path d="M2 12h20"/>'), horizontalRayLine:SV('<path d="M5 12h17"/><circle cx="5" cy="12" r="1.6"/>'),
+  horizontalSegment:SV('<path d="M5 12h14"/><circle cx="5" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'),
+  verticalStraightLine:SV('<path d="M12 2v20"/>'), priceLine:SV('<path d="M3 15h12"/><rect x="15" y="12" width="7" height="6" rx="1"/>'),
+  parallelStraightLine:SV('<path d="M2 16L20 4M4 21L22 9"/>'), priceChannelLine:SV('<path d="M2 14L22 6M2 20L22 12"/><path d="M2 17L22 9" stroke-dasharray="2 2"/>'),
+  fibonacciLine:SV('<path d="M3 4h18M3 9h18M3 13h18M3 20h18"/><path d="M5 20L19 4" stroke-dasharray="2 2"/>'),
+  brush:SV('<path d="M4 18c3 0 3-4 6-4s2 4 5 4 3-6 5-9"/>'), rect:SV('<rect x="4" y="6" width="16" height="12" rx="1"/>'), circle:SV('<circle cx="12" cy="12" r="8"/>'),
+  triangle:SV('<path d="M12 4l9 16H3z"/>'),
+  longPosition:SV('<rect x="4" y="4" width="16" height="8" fill="#089981" fill-opacity=".35"/><rect x="4" y="12" width="16" height="6" fill="#f23645" fill-opacity=".35"/><path d="M4 12h16"/>'),
+  shortPosition:SV('<rect x="4" y="6" width="16" height="6" fill="#f23645" fill-opacity=".35"/><rect x="4" y="12" width="16" height="8" fill="#089981" fill-opacity=".35"/><path d="M4 12h16"/>'),
+  priceRange:SV('<path d="M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4"/><path d="M4 4h16M4 20h16" stroke-dasharray="2 2"/>'),
+  dateRange:SV('<path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/><path d="M4 4v16M20 4v16" stroke-dasharray="2 2"/>'),
+  datePriceRange:SV('<rect x="4" y="4" width="16" height="16" stroke-dasharray="2 2"/><path d="M12 7v10M7 12h10"/>'),
+  textBox:SV('<path d="M5 6h14M12 6v13"/>'), simpleAnnotation:SV('<path d="M12 21v-7"/><rect x="4" y="3" width="16" height="10" rx="2"/>'), simpleTag:SV('<path d="M3 12h9l4-4h5v8h-5l-4-4"/>'),
+  ruler:SV('<path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>'), zoomIn:SV('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5M10.5 8v5"/>'), zoomOut:SV('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5"/>'),
+  magnet:SV('<path d="M6 3v8a6 6 0 0012 0V3"/><path d="M6 7h4M14 7h4"/>'), stay:SV('<path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 6l3 3"/><path d="M16 20h4"/>'),
+  lock:SV('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>'), unlock:SV('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 017.5-2"/>'),
+  eye:SV('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'), eyeOff:SV('<path d="M3 3l18 18M10.6 5.1A10 10 0 0112 5c6 0 10 7 10 7a17 17 0 01-3.2 3.9M6.6 6.6C3.8 8.4 2 12 2 12s4 7 10 7a9.6 9.6 0 004.4-1"/>'),
+  trash:SV('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'), clone:SV('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>')
+};
+const GROUPS = [
+  {id:'cursor', items:[['cross','Križ'],['dot','Pika'],['arrow','Puščica']]},
+  {id:'lines', items:[['segment','Trend linija','Alt+T'],['rayLine','Žarek'],['straightLine','Podaljšana linija'],['horizontalStraightLine','Horizontalna linija','Alt+H'],['horizontalRayLine','Horizontalni žarek'],['horizontalSegment','Horizontalni segment'],['verticalStraightLine','Vertikalna linija'],['priceLine','Cenovna linija'],['parallelStraightLine','Paralelni kanal'],['priceChannelLine','Cenovni kanal']]},
+  {id:'fib', items:[['fibonacciLine','Fib retracement','Alt+F']]},
+  {id:'shapes', items:[['brush','Čopič'],['rect','Pravokotnik'],['circle','Krog'],['triangle','Trikotnik']]},
+  {id:'measure', items:[['longPosition','Long pozicija'],['shortPosition','Short pozicija'],['priceRange','Cenovni razpon'],['dateRange','Časovni razpon'],['datePriceRange','Cenovni in časovni razpon']]},
+  {id:'text', items:[['textBox','Besedilo'],['simpleAnnotation','Opomba'],['simpleTag','Cenovna oznaka']]}
+];
+const HINTS = {longPosition:'Klik 1: vstop · klik 2: cilj · klik 3: stop  (Esc = prekliči)', shortPosition:'Klik 1: vstop · klik 2: cilj · klik 3: stop  (Esc = prekliči)', triangle:'Trije kliki za oglišča', brush:'Drži in vleci', parallelStraightLine:'Trije kliki', priceChannelLine:'Trije kliki', datePriceRange:'Klik na začetek in konec', priceRange:'Klik na začetek in konec', dateRange:'Klik na začetek in konec'};
+let groupSel = LS.get('groupSel', {}), tool = null, selectedId = null;
+const left = $('#left');
+function toolBtn(icon, title, fn){ const b=document.createElement('button'); b.innerHTML=icon; b.title=title; b.setAttribute('aria-label',title); b.onclick=fn;
+  b.style.cssText='width:36px;height:36px;padding:0;justify-content:center'; return b }
+function wrapEl(...els){ const w=document.createElement('div'); w.className='tg'; els.forEach(e=>w.appendChild(e)); left.appendChild(w); return w }
+const sepL = () => { const hs=document.createElement('div'); hs.className='hs'; left.appendChild(hs) };
+function moreBtn(wrapGetter, html, fn){ const m=document.createElement('button'); m.className='more'; m.textContent='▶'; m.title='Več'; m.dataset.popbtn=1; m.onclick=()=>openPop(wrapGetter(), html(), fn, 'right'); return m }
+function renderLeft(){
+  left.innerHTML='';
+  for (const g of GROUPS){
+    const cur = g.id==='cursor' ? state.cursor : (groupSel[g.id] && g.items.some(i=>i[0]===groupSel[g.id]) ? groupSel[g.id] : g.items[0][0]);
+    const it = g.items.find(i=>i[0]===cur);
+    const active = g.id==='cursor' ? !tool : tool===cur;
+    const b=toolBtn(ICON[cur], it[1]+(it[2]?' ('+it[2]+')':''), ()=> g.id==='cursor' ? setCursor(cur) : (tool===cur ? cancelTool() : startTool(cur))); if (active) b.classList.add('on');
+    let w; const els=[b];
+    if (g.items.length>1) els.push(moreBtn(()=>w, ()=>g.items.map(i=>item(i[0],i[1],ICON[i[0]], i[0]===cur, i[2])).join(''), v=>{ if (g.id==='cursor') setCursor(v); else { groupSel[g.id]=v; LS.set('groupSel',groupSel); startTool(v) } }));
+    w = wrapEl(...els);
+    if (g.id==='cursor' || g.id==='text') sepL();
+  }
+  const rb=toolBtn(ICON.ruler,'Ravnilo (meri ceno in čas)',()=> tool==='datePriceRange'?cancelTool():startTool('datePriceRange')); if (tool==='datePriceRange') rb.classList.add('on'); wrapEl(rb);
+  wrapEl(toolBtn(ICON.zoomIn,'Povečaj',()=>chart.zoomAtCoordinate(1.4)));
+  wrapEl(toolBtn(ICON.zoomOut,'Pomanjšaj',()=>chart.zoomAtCoordinate(0.7)));
+  sepL();
+  const mb=toolBtn(ICON.magnet, state.magnet==='off'?'Magnet (izklopljen)':'Magnet: '+(state.magnet==='weak'?'šibek':'močan'), ()=>{ state.magnet = state.magnet==='off' ? 'weak' : 'off'; LS.set('magnet2',state.magnet); renderLeft() });
+  if (state.magnet!=='off') mb.classList.add('on');
+  let mw; mw = wrapEl(mb, moreBtn(()=>mw, ()=>item('weak','Šibek magnet',ICON.magnet,state.magnet==='weak')+item('strong','Močan magnet',ICON.magnet,state.magnet==='strong')+item('off','Izklopi magnet','',state.magnet==='off'), v=>{ state.magnet=v; LS.set('magnet2',v); renderLeft() }));
+  const sb=toolBtn(ICON.stay,'Ostani v načinu risanja',()=>{ state.stay=!state.stay; LS.set('stay',state.stay); renderLeft() }); if (state.stay) sb.classList.add('on'); wrapEl(sb);
+  const ov=myOverlays(), locked = ov.length>0 && ov.every(o=>o.lock), hidden = ov.length>0 && ov.every(o=>!o.visible);
+  const lb=toolBtn(locked?ICON.lock:ICON.unlock, locked?'Odkleni vse risbe':'Zakleni vse risbe',()=>{ const o=myOverlays(); const l=!(o.length&&o.every(x=>x.lock)); o.forEach(x=>chart.overrideOverlay({id:x.id,lock:l})); saveDrawings(); renderLeft(); toast(l?'Risbe zaklenjene':'Risbe odklenjene') }); if (locked) lb.classList.add('on'); wrapEl(lb);
+  const hb=toolBtn(hidden?ICON.eyeOff:ICON.eye, hidden?'Pokaži risbe':'Skrij vse risbe',()=>{ const o=myOverlays(); const v=o.length>0&&o.every(x=>!x.visible); o.forEach(x=>chart.overrideOverlay({id:x.id,visible:v})); renderLeft() }); if (hidden) hb.classList.add('on'); wrapEl(hb);
+  let tw; const tb=toolBtn(ICON.trash,'Odstrani …',()=>openPop(tw, item('d','Odstrani risbe ('+myOverlays().length+')',ICON.trash)+item('i','Odstrani indikatorje ('+state.inds.length+')',ICON.trash)+item('a','Odstrani risbe in indikatorje',ICON.trash), v=>{
+    if (v!=='i'){ snapshot(); chart.removeOverlay({groupId:'d'}); saveDrawings() }
+    if (v!=='d'){ state.inds.forEach(o=>rmInd(o.name)); state.inds=[]; saveInds() }
+    closeDtb(); renderLeft(); toast('Odstranjeno') }, 'right'));
+  tb.dataset.popbtn=1; tw = wrapEl(tb);
+}
+function setCursor(c){ state.cursor=c; LS.set('cursor',c); cancelTool(); applyStyles(); renderLeft() }
+const hint = t => { const h=$('#hint'); h.textContent=t; h.style.display=t?'block':'none' };
+
+/* ---------- risanje ---------- */
+const lineStyle = (c, size, dash) => ({line:{color:c,size:size||1.5,style:dash?'dashed':'solid',dashedValue:dash==='dot'?[2,3]:[6,4]},text:{color:'#fff',backgroundColor:c,borderColor:c},rect:{color:c+'22',borderColor:c},polygon:{color:c+'22',borderColor:c},point:{color:c,borderColor:c,activeColor:c,activeBorderColor:c}});
+const myOverlays = () => chart.getOverlays({groupId:'d'});
+let drawingId = null;
+const evts = {
+  onDrawEnd: e=>{ drawingId=null; setTimeout(()=>{ saveDrawings(); hint(''); const n=e.overlay.name; if (state.stay) startTool(n); else { tool=null; renderLeft() } },0) },
+  onPressedMoveStart: ()=>snapshot(),
+  onPressedMoveEnd: ()=>setTimeout(()=>{ saveDrawings(); if (selectedId) showDtb(selectedId) },0),
+  onSelected: e=>{ selectedId=e.overlay.id; showDtb(selectedId) },
+  onDeselected: ()=>{ setTimeout(()=>{ if (!dtbBusy){ selectedId=null; closeDtb() } },0) },
+  onRightClick: e=>{ selectedId=e.overlay.id; ovCtx=e.overlay.id; showDtb(selectedId); return true }
+};
+function startTool(n){
+  cancelTool(true); closeDtb();
+  let extra = {};
+  if (n==='simpleAnnotation'||n==='simpleTag'||n==='textBox'){ const t=prompt('Besedilo:',''); if (t===null){ renderLeft(); return } extra.extendData=t||'Besedilo' }
+  tool=n; renderLeft(); hint(HINTS[n]||'');
+  snapshot();
+  drawingId = chart.createOverlay({name:n, groupId:'d', mode: state.magnet==='off'?'normal':state.magnet==='weak'?'weak_magnet':'strong_magnet', styles:lineStyle(state.color), ...extra, ...evts});
+}
+function cancelTool(silent){
+  if (drawingId){ const o=myOverlays().find(x=>x.id===drawingId); if (o && o.currentStep!==-1 && o.totalStep && o.currentStep < o.totalStep){ chart.removeOverlay({id:drawingId}); undoStack.pop() } drawingId=null }
+  tool=null; hint(''); if (!silent) renderLeft();
+}
+const drawKey = () => 'draw_'+(state.sym==='BTCUSD'?'BTC-PERPETUAL':state.sym);
+const serialize = () => myOverlays().filter(o=>o.id!==drawingId && o.points && o.points.length && o.points.every(p=>p.timestamp!=null && p.value!=null))
+  .map(o=>({name:o.name, points:o.points.map(p=>({timestamp:p.timestamp,value:p.value})), styles:o.styles, lock:o.lock, extendData:o.extendData}));
+let undoStack=[], redoStack=[];
+function snapshot(){ undoStack.push(JSON.stringify(serialize())); if (undoStack.length>60) undoStack.shift(); redoStack=[] }
+function saveDrawings(){ LS.set(drawKey(), serialize()) }
+function restoreFrom(list){ chart.removeOverlay({groupId:'d'}); for (const d of list) chart.createOverlay({...d, groupId:'d', ...evts}); saveDrawings(); selectedId=null; closeDtb(); renderLeft() }
+function restoreDrawings(){ chart.removeOverlay({groupId:'d'}); for (const d of LS.get(drawKey(),[])) chart.createOverlay({...d, groupId:'d', ...evts}); renderLeft() }
+function undo(){ cancelTool(true); if (!undoStack.length) return toast('Ni česa razveljaviti'); redoStack.push(JSON.stringify(serialize())); restoreFrom(JSON.parse(undoStack.pop())) }
+function redo(){ if (!redoStack.length) return toast('Ni česa uveljaviti'); undoStack.push(JSON.stringify(serialize())); restoreFrom(JSON.parse(redoStack.pop())) }
+$('#undoBtn').onclick=undo; $('#redoBtn').onclick=redo;
+
+/* ---------- plavajoča vrstica za izbrano risbo ---------- */
+const dtb=$('#dtb'); let ovCtx=null, dtbBusy=false;
+dtb.addEventListener('pointerdown', ()=>{ dtbBusy=true; setTimeout(()=>dtbBusy=false, 400) });
+pop.addEventListener('pointerdown', ()=>{ dtbBusy=true; setTimeout(()=>dtbBusy=false, 400) });
+const PALETTE=['#2962ff','#089981','#f23645','#ff9800','#ffeb3b','#9c27b0','#00bcd4','#e91e63','#ffffff','#787b86'];
+const curOverlay = id => myOverlays().find(o=>o.id===id);
+function showDtb(id){
+  const o=curOverlay(id); if (!o) return;
+  const l=(o.styles&&o.styles.line)||{}, c=colOf(o), sz=l.size||1.5, dash=l.style==='dashed';
+  dtb.innerHTML='<button data-a="color" title="Barva" data-popbtn="1"><span class="sw" style="background:'+esc(c)+'"></span></button>'+
+    '<button data-a="width" title="Debelina" data-popbtn="1">'+SV('<path d="M4 12h16" stroke-width="'+Math.max(1,sz)+'"/>')+'<small>'+sz+'px</small></button>'+
+    '<button data-a="style" title="Slog črte" data-popbtn="1">'+SV(dash?'<path d="M3 12h4M10 12h4M17 12h4"/>':'<path d="M3 12h18"/>')+'</button>'+
+    '<button data-a="lock" title="'+(o.lock?'Odkleni':'Zakleni')+'">'+(o.lock?ICON.lock:ICON.unlock)+'</button>'+
+    '<button data-a="clone" title="Kloniraj">'+ICON.clone+'</button>'+
+    '<button data-a="del" title="Izbriši (Delete)">'+ICON.trash+'</button>';
+  dtb.classList.add('open');
+}
+function closeDtb(){ dtb.classList.remove('open') }
+function restyle(id, patch){ const o=curOverlay(id); if (!o) return; snapshot();
+  const l=(o.styles&&o.styles.line)||{}; const c=patch.color||l.color||state.color;
+  const curDash = l.style==='dashed' ? (l.dashedValue&&l.dashedValue[0]===2?'dot':'dash') : null;
+  chart.overrideOverlay({id, styles:lineStyle(c, patch.size||l.size, patch.dash!==undefined ? patch.dash : curDash)}); saveDrawings(); showDtb(id) }
+function dtbAction(a, anchor){
+  const id=selectedId; if (!id) return;
+  if (a==='color') openPop(anchor, '<div style="display:grid;grid-template-columns:repeat(5,28px);gap:6px;padding:6px 10px">'+PALETTE.map(c=>'<div data-v="'+c+'" title="'+c+'" style="width:28px;height:28px;border-radius:4px;cursor:pointer;background:'+c+'"></div>').join('')+'</div>', v=>{ state.color=v; LS.set('color',v); restyle(id,{color:v}) });
+  if (a==='width') openPop(anchor, [1,1.5,2,3,4].map(s=>item(String(s), s+' px', SV('<path d="M3 12h18" stroke-width="'+s+'"/>'))).join(''), v=>restyle(id,{size:Number(v)}));
+  if (a==='style') openPop(anchor, item('solid','Polna',SV('<path d="M3 12h18"/>'))+item('dash','Črtkana',SV('<path d="M3 12h4M10 12h4M17 12h4"/>'))+item('dot','Pikčasta',SV('<path d="M3 12h1M8 12h1M13 12h1M18 12h1"/>')), v=>restyle(id,{dash: v==='solid'?null:v}));
+  if (a==='lock'){ const o=curOverlay(id); if (!o) return; chart.overrideOverlay({id, lock:!o.lock}); saveDrawings(); showDtb(id); renderLeft(); toast(o.lock?'Odklenjeno':'Zaklenjeno') }
+  if (a==='clone'){ const o=curOverlay(id); if (!o) return; snapshot(); chart.createOverlay({name:o.name, groupId:'d', points:o.points.map(p=>({timestamp:p.timestamp, value:p.value*1.01})), styles:o.styles, extendData:o.extendData, ...evts}); saveDrawings(); toast('Klonirano (+1 % višje)') }
+  if (a==='del'){ snapshot(); chart.removeOverlay({id}); selectedId=null; closeDtb(); saveDrawings(); renderLeft() }
+}
+dtb.onclick = e => { const b=e.target.closest('[data-a]'); if (b) dtbAction(b.dataset.a, b) };
+
+/* ---------- desni klik na graf ---------- */
+$('#k').addEventListener('contextmenu', e => {
+  e.preventDefault();
+  setTimeout(()=>{
+    if (ovCtx){ ovCtx=null;
+      openPopAt(e.clientX, e.clientY, item('del','Izbriši',ICON.trash,0,'Del')+item('lock','Zakleni / odkleni',ICON.lock)+item('clone','Kloniraj',ICON.clone), v=>dtbAction(v, dtb)); return }
+    openPopAt(e.clientX, e.clientY,
+      item('reset','Ponastavi pogled grafa','',0,'Alt+R')+item('copy','Kopiraj ceno','')+'<hr>'+item('ind','Indikatorji …','',0,'/')+item('sym','Zamenjaj simbol …','')+'<hr>'+item('rmd','Odstrani risbe',ICON.trash)+item('rmi','Odstrani indikatorje',ICON.trash),
+      v=>{ if (v==='reset') resetView(); if (v==='ind') indDialog(); if (v==='sym') symbolSearch();
+        if (v==='copy'){ const r=$('#k').getBoundingClientRect(); const p=chart.convertFromPixel([{x:e.clientX-r.left,y:e.clientY-r.top}],{paneId:'candle_pane'}); const val=(Array.isArray(p)?p[0]:p).value;
+          if (val!=null) navigator.clipboard.writeText(val.toFixed(2)).then(()=>toast('Kopirano: '+val.toFixed(2)),()=>toast('Kopiranje ni uspelo')) }
+        if (v==='rmd'){ snapshot(); chart.removeOverlay({groupId:'d'}); saveDrawings(); closeDtb(); renderLeft() }
+        if (v==='rmi'){ state.inds.forEach(o=>rmInd(o.name)); state.inds=[]; saveInds() } });
+  }, 0);
+});
+function resetView(){ chart.setBarSpace(8); chart.setOffsetRightDistance(80); chart.scrollToRealTime(); setAxis('normal') }
+
+/* ---------- spodnja vrstica ---------- */
+const RANGES = [['1D',864e5,'5m','15m'],['5D',4.32e8,'15m','15m'],['1M',2.592e9,'1h','1h'],['3M',7.776e9,'4h','4h'],['6M',1.5552e10,'D','D'],['YTD',null,'D','D'],['1Y',3.1536e10,'D','D'],['5Y',1.5768e11,'W','W'],['All',Infinity,'M','M']];
+$('#ranges').innerHTML = RANGES.map(r=>'<button data-r="'+r[0]+'" title="'+r[0]+'">'+r[0]+'</button>').join('');
+$('#ranges').onclick = e => { const b=e.target.closest('[data-r]'); if (!b) return; const r=RANGES.find(x=>x[0]===b.dataset.r); const s=symOf(state.sym);
+  let tf = s.src==='yahoo' ? r[3] : r[2]; if (s.dvol && !tfOf(tf).dv) tf = {'5m':'1m','15m':'1h','4h':'1h'}[tf]||'D';
+  pendingRange = r[0]==='YTD' ? Date.now()-Date.UTC(new Date().getUTCFullYear(),0,1) : r[1];
+  if (state.tf===tf) applyRange(); else { state.tf=tf; load() } };
+function applyRange(){
+  if (pendingRange==null) return; const span=pendingRange; pendingRange=null;
+  const list=chart.getDataList(); if (!list.length) return;
+  let from = span===Infinity ? 0 : list.findIndex(b=>b.timestamp>=Date.now()-span); if (from<0) from=0;
+  const n = Math.max(5, list.length-from), sz=chart.getSize('candle_pane','main'), w=(sz&&sz.width)||800;
+  chart.setOffsetRightDistance(20); chart.setBarSpace(Math.max(1, Math.min(40, (w-40)/n))); chart.scrollToRealTime();
+}
+function tick(){ const t=new Date().toLocaleTimeString('sl-SI',{timeZone:state.tz,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  let off='UTC'; if (state.tz!=='UTC'){ try { off=new Intl.DateTimeFormat('en-GB',{timeZone:state.tz,timeZoneName:'shortOffset'}).formatToParts(new Date()).find(p=>p.type==='timeZoneName').value.replace('GMT','UTC') } catch(e){} }
+  $('#clock').textContent=t+' '+off }
+setInterval(tick,1000); tick();
+$('#clockBtn').onclick = e => openPop(e.currentTarget, item('Europe/Ljubljana','Ljubljana (CET)','',state.tz!=='UTC')+item('UTC','UTC','',state.tz==='UTC'), v=>{ state.tz=v; chart.setTimezone(v); LS.set('tz',v); tick() }, 'up');
+function setAxis(a){ state.axis=a; LS.set('axis',a); chart.overrideYAxis({paneId:'candle_pane', name: a==='pct'?'percentage':a==='log'?'logarithm':'normal'});
+  $('#pctBtn').classList.toggle('on',a==='pct'); $('#logBtn').classList.toggle('on',a==='log'); $('#autoBtn').classList.toggle('on',a==='normal') }
+$('#pctBtn').onclick=()=>setAxis(state.axis==='pct'?'normal':'pct'); $('#logBtn').onclick=()=>setAxis(state.axis==='log'?'normal':'log'); $('#autoBtn').onclick=()=>{ setAxis('normal'); chart.scrollToRealTime() };
+
+/* ---------- nastavitve, celozaslonski način, posnetek ---------- */
+$('#setBtn').onclick = () => {
+  openModal('<header>Nastavitve grafa<button data-x>✕</button></header><div class="frm">'+
+    '<label for="sUp">Rastoča sveča</label><input type="color" id="sUp" value="'+esc(state.upC)+'">'+
+    '<label for="sDn">Padajoča sveča</label><input type="color" id="sDn" value="'+esc(state.dnC)+'">'+
+    '<label for="sGrid">Mreža</label><input type="checkbox" id="sGrid" '+(state.grid?'checked':'')+' style="width:20px;height:20px;accent-color:#2962ff">'+
+    '<span>Privzete barve</span><button id="sRst">Ponastavi</button></div>');
+  const upd=()=>{ state.upC=$('#sUp').value; state.dnC=$('#sDn').value; state.grid=$('#sGrid').checked; LS.set('upC',state.upC); LS.set('dnC',state.dnC); LS.set('grid',state.grid); applyStyles() };
+  $('#sUp').oninput=upd; $('#sDn').oninput=upd; $('#sGrid').onchange=upd;
+  $('#sRst').onclick=()=>{ $('#sUp').value='#089981'; $('#sDn').value='#f23645'; $('#sGrid').checked=true; upd() };
+};
+$('#fsBtn').onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen() } catch(e){ toast('Celozaslonski način ni podprt') } };
+$('#snap').onclick = () => { const url = chart.getConvertPictureUrl(true,'png','#131722');
+  const a=document.createElement('a'); a.href=url; a.download=state.sym.replace(/[^A-Za-z0-9._-]/g,'_')+'_'+state.tf+'_'+new Date().toISOString().slice(0,16).replace(':','-')+'.png'; document.body.appendChild(a); a.click(); a.remove() };
+
 /* ---------- watchlist ---------- */
-const live = {}; const wlChs = new Set();
 function onDvol(s, d){ const l = live[s.id] = live[s.id]||{}; l.last = d.volatility; if (l.open) l.chg = (l.last/l.open-1)*100; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() }
 function renderWL(){
-  const box = $('#wl'); let h = '<div class="wlh"><span>Simbol</span><span style="text-align:right">Zadnja</span><span style="text-align:right">Spr. %</span></div>';
+  let h = '';
   for (const g of WL){
     const closed = state.closed.includes(g.group);
     h += '<div class="grp'+(closed?' closed':'')+'" data-g="'+esc(g.group)+'">'+esc(g.group.toUpperCase())+'</div>';
@@ -307,9 +785,9 @@ function renderWL(){
   }
   const extra = LS.get('customSyms',[]);
   if (extra.length){ h += '<div class="grp" data-g="">DERIBIT (DODANO)</div>';
-    for (const id of extra) h += '<div class="row" data-id="'+esc(id)+'"><b>'+esc(id)+'<small>Deribit · desni klik = odstrani</small></b><span class="n"></span><span class="p"></span></div>' }
-  h += '<div class="wlf">Delnice, ETF, forex, VIX, DXY in nafta: Yahoo, zamik ~30 min (posodobljeno '+(META.updated?agoTxt(META.updated):'—')+'). BTC in DVOL: Deribit v živo. Simbole urejaš v <b>watchlist.json</b> v repozitoriju.</div>';
-  box.innerHTML = h;
+    for (const id of extra) h += '<div class="row" data-id="'+esc(id)+'"><b>'+esc(id)+'<small>desni klik = odstrani</small></b><span class="n"></span><span class="p"></span></div>' }
+  h += '<div class="wlf">Delnice/ETF/forex: Yahoo, zamik ~30 min (posodobljeno '+(META.updated?agoTxt(META.updated):'—')+'). BTC in DVOL: Deribit v živo. Simbole urejaš v <b>watchlist.json</b>.</div>';
+  const box=$('#wlList'); box.innerHTML = h;
   box.querySelectorAll('.row').forEach(r=>{ paintRow(r.dataset.id); r.onclick=()=>pick(r.dataset.id);
     r.oncontextmenu=e=>{ const id=r.dataset.id; if (!LS.get('customSyms',[]).includes(id)) return; e.preventDefault(); LS.set('customSyms', LS.get('customSyms',[]).filter(x=>x!==id)); renderWL() } });
   box.querySelectorAll('.grp[data-g]').forEach(g=>g.onclick=()=>{ const n=g.dataset.g; if(!n) return; state.closed = state.closed.includes(n)?state.closed.filter(x=>x!==n):[...state.closed,n]; LS.set('closedGroups',state.closed); renderWL() });
@@ -324,20 +802,25 @@ function paintRow(id){
 function markSel(){ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel', r.dataset.id===state.sym)) }
 function startLiveWL(){
   for (const s of Object.values(SYM)){
-    if (s.src!=='deribit') continue;
+    if (s.src!=='deribit' || !WL.some(g=>g.items.some(i=>i.id===s.id))) continue;
     if (s.dvol){
       const ch='deribit_volatility_index.'+s.dvol.toLowerCase()+'_usd'; wlChs.add(ch); subscribe(ch, d=>onDvol(s,d));
       const now=Date.now(); rpc('public/get_volatility_index_data',{currency:s.dvol,start_timestamp:now-3*864e5,end_timestamp:now,resolution:'1D'})
         .then(r=>{ const d=(r.data||[]).sort((a,b)=>a[0]-b[0]); const t=d[d.length-1]; if(!t) return; const l=live[s.id]=live[s.id]||{}; l.open=t[1]; if(l.last==null) l.last=t[4]; l.chg=(l.last/l.open-1)*100; paintRow(s.id); headerPrice() }).catch(()=>{});
     } else {
       const ch='ticker.'+s.inst+'.100ms'; wlChs.add(ch);
-      let tPaint=0; subscribe(ch, d=>{ const l=live[s.id]=live[s.id]||{}; l.last=d.last_price; l.chg=d.stats&&d.stats.price_change;
-        const now=Date.now(); if (now-tPaint>500){ tPaint=now; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() } });
+      let tp=0; subscribe(ch, d=>{ const l=live[s.id]=live[s.id]||{}; l.last=d.last_price; l.chg=d.stats&&d.stats.price_change;
+        const now=Date.now(); if (now-tp>500){ tp=now; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() } });
     }
   }
 }
-$('#wlBtn').onclick = () => { const a=$('#app'); if (matchMedia('(max-width:900px)').matches) a.classList.toggle('wlopen'); else { a.classList.toggle('nowl'); LS.set('nowl', a.classList.contains('nowl')) } setTimeout(()=>chart.resize(),0) };
-if (LS.get('nowl',false)) $('#app').classList.add('nowl');
+function toggleWL(){ const a=$('#app');
+  if (matchMedia('(max-width:900px)').matches) a.classList.toggle('wlopen');
+  else { a.classList.toggle('nowl'); LS.set('nowl', a.classList.contains('nowl')); $('#wlBtn').classList.toggle('on', !a.classList.contains('nowl')) }
+  setTimeout(()=>chart.resize(),0) }
+$('#wlBtn').onclick=toggleWL; $('#wlBtnM').onclick=toggleWL;
+const mq=matchMedia('(max-width:900px)'); const mqf=()=>{ $('#wlBtnM').style.display = mq.matches?'inline-flex':'none' }; mq.addEventListener('change',mqf); mqf();
+if (LS.get('nowl',false)){ $('#app').classList.add('nowl'); $('#wlBtn').classList.remove('on') }
 
 async function loadMeta(){
   try { const r = await fetch('data/meta.json?t='+Date.now()); if (!r.ok) throw 0; const m = await r.json();
@@ -345,120 +828,34 @@ async function loadMeta(){
 }
 setInterval(async ()=>{ if (await loadMeta()){ renderWL(); headerPrice(); if (symOf(state.sym).src==='yahoo') load(); else updateStatus() } }, 5*60*1000);
 
-/* ---------- zgornja vrstica ---------- */
-$('#custom').addEventListener('keydown', e => {
-  if (e.key!=='Enter') return;
-  const v = e.target.value.trim().toUpperCase(); if (!v) return;
-  const extra = LS.get('customSyms',[]); if (!SYM[v] && !extra.includes(v)) { extra.push(v); LS.set('customSyms', extra.slice(-15)) }
-  e.target.value=''; e.target.blur(); renderWL(); pick(v);
-});
-function renderTfs(){
-  const box=$('#tfs'); box.innerHTML=''; const s=symOf(state.sym);
-  for (const t of TFS){ const b=document.createElement('button'); b.textContent=t.k; if (t.k===state.tf) b.className='on';
-    b.disabled = !allowedTf(s,t); b.title = b.disabled ? 'Za ta vir ni na voljo' : ''; b.onclick=()=>{ state.tf=t.k; load() }; box.appendChild(b) }
-}
-const TZS = ['Europe/Ljubljana','UTC'];
-function renderTz(){ $('#tzBtn').textContent = state.tz==='UTC'?'UTC':'CET' }
-$('#tzBtn').onclick = () => { state.tz = TZS[(TZS.indexOf(state.tz)+1)%2]; chart.setTimezone(state.tz); LS.set('tz',state.tz); renderTz() };
-$('#snap').onclick = () => {
-  const url = chart.getConvertPictureUrl(true,'png','#131722');
-  const a=document.createElement('a'); a.href=url; a.download=state.sym+'_'+state.tf+'_'+new Date().toISOString().slice(0,16).replace(':','-')+'.png'; document.body.appendChild(a); a.click(); a.remove();
-};
-
-/* ---------- indikatorji ---------- */
-const MAIN_INDS = [['MA','MA (5,10,30,60)'],['EMA','EMA (6,12,20)'],['SMA','SMA'],['BOLL','Bollinger Bands'],['SAR','Parabolic SAR'],['BBI','BBI']];
-const SUB_INDS = [['VOL','Volumen'],['RSI','RSI'],['MACD','MACD'],['KDJ','KDJ (Stoch)'],['CCI','CCI'],['OBV','OBV'],['DMI','DMI / ADX'],['WR','Williams %R'],['ROC','ROC'],['MTM','Momentum'],['AO','Awesome Osc.'],['TRIX','TRIX']];
-const isMain = n => MAIN_INDS.some(m=>m[0]===n);
-function addInd(n){ isMain(n) ? chart.createIndicator({name:n, paneId:'candle_pane'}, true) : chart.createIndicator({name:n, paneId:'pane_'+n}) }
-function rmInd(n){ chart.removeIndicator({name:n, paneId: isMain(n)?'candle_pane':'pane_'+n}) }
-function renderIndMenu(){
-  const m=$('#indMenu'); m.innerHTML='';
-  const sect=(title,list)=>{ const h=document.createElement('h4'); h.textContent=title; m.appendChild(h);
-    for (const [n,l] of list){ const lab=document.createElement('label'); const c=document.createElement('input'); c.type='checkbox'; c.checked=state.inds.includes(n);
-      c.onchange=()=>{ if(c.checked){ addInd(n); state.inds.push(n) } else { rmInd(n); state.inds=state.inds.filter(x=>x!==n) } LS.set('inds',state.inds) };
-      lab.appendChild(c); lab.appendChild(document.createTextNode(l)); m.appendChild(lab) } };
-  sect('Na grafu cene', MAIN_INDS); sect('Spodnji paneli', SUB_INDS);
-}
-$('#indBtn').onclick = e => { const m=$('#indMenu'); if (m.classList.toggle('open')){ renderIndMenu(); const r=e.currentTarget.getBoundingClientRect(); m.style.left=Math.max(4,Math.min(r.left, innerWidth-240))+'px'; m.style.top=(r.bottom+4)+'px' } };
-document.addEventListener('pointerdown', e => { if (!e.target.closest('#indMenu,#indBtn')) $('#indMenu').classList.remove('open') });
-
-/* ---------- risanje ---------- */
-const I = p => '<svg viewBox="0 0 24 24">'+p+'</svg>';
-const TOOLS = [
-  ['cursor','Kazalec', I('<path d="M6 3l12 9-5.5 1.2L16 20l-2.5 1-3-6.6L6 18z"/>')],
-  ['segment','Trend linija', I('<path d="M4 19L20 5"/><circle cx="4" cy="19" r="1.6"/><circle cx="20" cy="5" r="1.6"/>')],
-  ['rayLine','Žarek', I('<path d="M4 19L22 4"/><circle cx="4" cy="19" r="1.6"/>')],
-  ['straightLine','Podaljšana linija', I('<path d="M2 21L22 3"/>')],
-  ['horizontalStraightLine','Horizontalna linija', I('<path d="M2 12h20"/>')],
-  ['horizontalRayLine','Horizontalni žarek', I('<path d="M5 12h17"/><circle cx="5" cy="12" r="1.6"/>')],
-  ['verticalStraightLine','Vertikalna linija', I('<path d="M12 2v20"/>')],
-  ['priceLine','Cenovna linija', I('<path d="M3 15h12"/><rect x="15" y="12" width="7" height="6" rx="1"/>')],
-  ['parallelStraightLine','Paralelni kanal', I('<path d="M2 16L20 4M4 21L22 9"/>')],
-  ['priceChannelLine','Cenovni kanal', I('<path d="M2 14L22 6M2 20L22 12"/><path d="M2 17L22 9" stroke-dasharray="2 2"/>')],
-  ['fibonacciLine','Fibonacci retracement', I('<path d="M3 4h18M3 9h18M3 13h18M3 20h18"/><path d="M5 20L19 4" stroke-dasharray="2 2"/>')],
-  ['simpleAnnotation','Oznaka', I('<path d="M12 21v-7"/><rect x="4" y="3" width="16" height="10" rx="2"/>')],
-  ['simpleTag','Cenovna oznaka', I('<path d="M3 12h9l4-4h5v8h-5l-4-4"/>')]
-];
-let tool = 'cursor', selectedId = null;
-const leftBox = $('#left');
-function btn(html, title, fn){ const b=document.createElement('button'); b.innerHTML=html; b.title=title; b.setAttribute('aria-label',title); b.onclick=fn; leftBox.appendChild(b); return b }
-const sep = () => { const d=document.createElement('div'); d.className='sep'; leftBox.appendChild(d) };
-function renderTools(){ leftBox.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on', b.dataset.t===tool)) }
-for (const [n,t,ic] of TOOLS){ const b=btn(ic,t,()=>startTool(n)); b.dataset.t=n }
-sep();
-const col=document.createElement('input'); col.type='color'; col.id='color'; col.value=state.color; col.title='Barva risb';
-col.oninput=()=>{ state.color=col.value; LS.set('color',state.color); if (selectedId){ chart.overrideOverlay({id:selectedId, styles:styleFor(state.color)}); saveDrawings() } };
-leftBox.appendChild(col);
-const magBtn = btn(I('<path d="M6 3v8a6 6 0 0012 0V3"/><path d="M6 7h4M14 7h4"/>'),'Magnet (pripni na OHLC)',()=>{ state.magnet=!state.magnet; LS.set('magnet',state.magnet); magBtn.classList.toggle('on',state.magnet) });
-magBtn.classList.toggle('on', state.magnet);
-btn(I('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>'),'Zakleni / odkleni vse risbe',()=>{ const ov=myOverlays(); const lock=!(ov[0]&&ov[0].lock); ov.forEach(o=>chart.overrideOverlay({id:o.id,lock})); saveDrawings(); toast(lock?'Risbe zaklenjene':'Risbe odklenjene') });
-btn(I('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),'Skrij / pokaži risbe',()=>{ const ov=myOverlays(); const vis=!(ov[0]&&ov[0].visible); ov.forEach(o=>chart.overrideOverlay({id:o.id,visible:vis})) });
-btn(I('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-4"/>'),'Razveljavi zadnjo risbo',()=>{ const ov=myOverlays(); const o=ov[ov.length-1]; if (o){ chart.removeOverlay({id:o.id}); saveDrawings() } });
-btn(I('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),'Izbriši vse risbe na tem simbolu',()=>{ if (!myOverlays().length) return; if (btnConfirm()) { chart.removeOverlay({groupId:'d'}); saveDrawings(); toast('Vse risbe izbrisane') } });
-let confirmT=0; function btnConfirm(){ if (Date.now()-confirmT<2500) return true; confirmT=Date.now(); toast('Klikni še enkrat za brisanje vseh risb'); return false }
-
-const styleFor = c => ({line:{color:c,size:1.5},text:{color:'#fff',backgroundColor:c,borderColor:c},rect:{color:c+'22',borderColor:c},polygon:{color:c+'22',borderColor:c},point:{color:c,borderColor:c,activeColor:c,activeBorderColor:c}});
-const myOverlays = () => chart.getOverlays({groupId:'d'});
-const evts = {
-  onDrawEnd: ()=>{ setTimeout(()=>{ saveDrawings(); tool='cursor'; renderTools() },0) },
-  onPressedMoveEnd: ()=>setTimeout(saveDrawings,0),
-  onSelected: e=>{ selectedId=e.overlay.id },
-  onDeselected: ()=>{ selectedId=null },
-  onRightClick: e=>{ chart.removeOverlay({id:e.overlay.id}); setTimeout(saveDrawings,0); return true }
-};
-function startTool(n){
-  tool=n; renderTools(); if (n==='cursor') return;
-  const extra = n==='simpleAnnotation'||n==='simpleTag' ? {extendData: (prompt('Besedilo oznake:','') || 'Oznaka')} : {};
-  chart.createOverlay({name:n, groupId:'d', mode: state.magnet?'strong_magnet':'normal', styles:styleFor(state.color), ...extra, ...evts});
-}
-const drawKey = () => 'draw_'+(state.sym==='BTCUSD'?'BTC-PERPETUAL':state.sym);
-function saveDrawings(){
-  const list = myOverlays().filter(o=>o.points && o.points.length && o.points.every(p=>p.timestamp!=null && p.value!=null))
-    .map(o=>({name:o.name, points:o.points.map(p=>({timestamp:p.timestamp,value:p.value})), styles:o.styles, lock:o.lock, extendData:o.extendData}));
-  LS.set(drawKey(), list);
-}
-function restoreDrawings(){
-  chart.removeOverlay({groupId:'d'});
-  for (const d of LS.get(drawKey(),[])) chart.createOverlay({...d, groupId:'d', ...evts});
-}
+/* ---------- tipkovnica ---------- */
 document.addEventListener('keydown', e => {
-  if (e.target.matches('input,select')) return;
-  if ((e.key==='Delete'||e.key==='Backspace') && selectedId){ chart.removeOverlay({id:selectedId}); selectedId=null; saveDrawings() }
-  if (e.key==='Escape'){ tool='cursor'; renderTools() }
+  if (e.target.matches('input,select,textarea')) { if (e.key==='Escape') closeModal(); return }
+  const k=e.key.toLowerCase();
+  if ((e.ctrlKey||e.metaKey) && k==='z'){ e.preventDefault(); e.shiftKey?redo():undo(); return }
+  if ((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); redo(); return }
+  if (e.altKey && k==='r'){ e.preventDefault(); resetView(); return }
+  if (e.altKey && k==='t'){ e.preventDefault(); startTool('segment'); return }
+  if (e.altKey && k==='h'){ e.preventDefault(); startTool('horizontalStraightLine'); return }
+  if (e.altKey && k==='f'){ e.preventDefault(); startTool('fibonacciLine'); return }
+  if (e.key==='/'){ e.preventDefault(); indDialog(); return }
+  if ((e.key==='Delete'||e.key==='Backspace') && selectedId){ snapshot(); chart.removeOverlay({id:selectedId}); selectedId=null; closeDtb(); saveDrawings(); renderLeft(); return }
+  if (e.key==='Escape'){ closePop(); closeModal(); cancelTool(); return }
+  if (/^[a-z0-9]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && !modal.classList.contains('open')){ e.preventDefault(); symbolSearch(e.key.toUpperCase()); $('#ssq').dispatchEvent(new Event('input')) }
 });
 
 /* ---------- start ---------- */
 (async () => {
-  renderTz(); renderTools(); connect();
+  renderCt(); renderLeft(); connect();
   try { const r = await fetch('watchlist.json?t='+Date.now()); WL = await r.json() }
   catch(e){ WL = [{group:'Glavno', items:[{id:'BTCUSD',src:'deribit',inst:'BTC-PERPETUAL',name:'BTC perp (Deribit)'},{id:'DVOL',src:'deribit',inst:'DVOL:BTC',name:'BTC DVOL (Deribit)'}]}] }
-  WL.forEach(g=>g.items.forEach(addSym));
-  LS.get('customSyms',[]).forEach(id=>{ if(!SYM[id]) addSym({id,src:'deribit',inst:id}) });
+  WL.forEach(g=>g.items.forEach(it=>addSym(it, g.group)));
+  LS.get('customSyms',[]).forEach(id=>{ if(!SYM[id]) addSym({id,src:'deribit',inst:id},'Deribit') });
   await loadMeta();
   if (!SYM[state.sym]) state.sym = 'BTCUSD';
   renderWL(); startLiveWL();
   state.inds.forEach(addInd);
-  load();
+  load(); setAxis(state.axis);
 })();
 }
 </script>
