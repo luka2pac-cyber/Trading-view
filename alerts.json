@@ -1,6 +1,16 @@
 {
  "chat_id": 150268248,
  "tg_offset": 926652564,
- "alerts": [],
+ "alerts": [
+  {
+   "id": "TEST1",
+   "sym": "BTCUSD",
+   "price": 1000,
+   "op": "above",
+   "note": "Testni alarm (Claude) – sistem deluje",
+   "status": "active",
+   "created": 1795619547804
+  }
+ ],
  "bot": "luka_charts_alarm_bot"
 }
