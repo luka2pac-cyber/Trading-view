@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#131722">
+<title>Luka Charts</title>
+<style>
+:root{--bg:#131722;--panel:#1e222d;--line:#2a2e39;--ink:#d1d4dc;--mute:#787b86;--acc:#2962ff;--up:#089981;--dn:#f23645}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.3 -apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Ubuntu,sans-serif;overflow:hidden}
+button,select,input{font:inherit;color:var(--ink);background:transparent;border:0;border-radius:4px}
+button{cursor:pointer;padding:6px 8px;white-space:nowrap}
+button:hover{background:var(--line)}
+button.on{color:#fff;background:var(--acc)}
+button:disabled{opacity:.3;cursor:default;background:none}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+#app{display:grid;grid-template-rows:44px 1fr 26px;grid-template-columns:46px 1fr 320px;height:100dvh}
+#app.nowl{grid-template-columns:46px 1fr 0}
+#top{grid-column:1/4;display:flex;align-items:center;gap:2px;padding:0 8px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+#top::-webkit-scrollbar{display:none}
+#top>*,#tfs>*{flex:none}
+.sep{width:1px;height:22px;background:var(--line);margin:0 6px;flex:none}
+#symName{font-weight:700;padding:6px 8px;background:var(--panel)}
+#custom{width:140px;padding:6px 8px;background:var(--panel);font-size:12px}
+#price{font-weight:700;font-variant-numeric:tabular-nums;padding:0 4px 0 8px}
+#chg{font-variant-numeric:tabular-nums;padding-right:6px}
+.up{color:var(--up)}.dn{color:var(--dn)}
+#wlBtn{margin-left:auto}
+#left{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-right:1px solid var(--line);overflow-y:auto;scrollbar-width:none}
+#left button{width:38px;height:36px;padding:0;display:grid;place-items:center}
+#left svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+#left .sep{width:26px;height:1px;margin:4px 0}
+#color{width:30px;height:30px;padding:0;cursor:pointer}
+#chart{position:relative;overflow:hidden}
+#k{position:absolute;inset:0}
+#wl{border-left:1px solid var(--line);overflow-y:auto;background:var(--bg)}
+#app.nowl #wl{display:none}
+.wlh{display:grid;grid-template-columns:1fr 84px 64px;padding:8px 10px;color:var(--mute);font-size:12px;position:sticky;top:0;background:var(--bg);z-index:1;border-bottom:1px solid var(--line)}
+.grp{padding:12px 10px 4px;color:var(--mute);font-size:11px;letter-spacing:.02em;cursor:pointer;user-select:none}
+.grp::before{content:"⌄ "}.grp.closed::before{content:"› "}
+.row{display:grid;grid-template-columns:1fr 84px 64px;align-items:center;padding:7px 10px;cursor:pointer;border:1px solid transparent;border-radius:4px;margin:0 4px;font-variant-numeric:tabular-nums}
+.row:hover{background:var(--panel)}
+.row.sel{border-color:#5d606b;background:var(--panel)}
+.row b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .n{text-align:right}.row .p{text-align:right}
+.row small{display:block;color:var(--mute);font-size:10px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.live{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--up);margin-left:5px;vertical-align:middle}
+.wlf{padding:12px 10px;color:var(--mute);font-size:11px;line-height:1.5}
+#status{grid-column:1/4;display:flex;gap:14px;align-items:center;padding:0 10px;border-top:1px solid var(--line);color:var(--mute);font-size:11px;white-space:nowrap;overflow:hidden}
+#dot{width:7px;height:7px;border-radius:50%;background:var(--mute);flex:none}
+#dot.ok{background:var(--up)}#dot.bad{background:var(--dn)}#dot.delay{background:#f7a600}
+.menu{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px;box-shadow:0 8px 24px #0008;display:none;min-width:220px;max-height:70vh;overflow:auto}
+.menu.open{display:block}
+.menu h4{margin:6px 8px;color:var(--mute);font-weight:400;font-size:11px}
+.menu label{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:4px;cursor:pointer}
+.menu label:hover{background:var(--line)}
+.menu input[type=checkbox]{accent-color:var(--acc);width:16px;height:16px}
+#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:6px;display:none;z-index:30}
+@media(max-width:900px){
+  #app,#app.nowl{grid-template-columns:40px 1fr}
+  #wl{position:fixed;top:44px;right:0;bottom:26px;width:min(340px,92vw);z-index:15;box-shadow:-8px 0 24px #0008}
+  #app:not(.wlopen) #wl{display:none}
+  #app.wlopen #wl{display:block}
+  #left button{width:34px;height:32px}#custom{width:100px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <span id="symName">—</span>
+    <span id="price">—</span><span id="chg"></span>
+    <div class="sep"></div>
+    <div id="tfs" style="display:flex;gap:1px"></div>
+    <div class="sep"></div>
+    <button id="indBtn">ƒx Indikatorji</button>
+    <button id="snap" title="Posnetek grafa (PNG)">📷</button>
+    <button id="tzBtn" title="Časovni pas"></button>
+    <input id="custom" placeholder="Deribit instrument…" aria-label="Poljuben Deribit instrument" autocomplete="off" spellcheck="false">
+    <button id="wlBtn" title="Watchlist">☰ Watchlist</button>
+  </div>
+  <div id="left"></div>
+  <div id="chart"><div id="k"></div></div>
+  <div id="wl"></div>
+  <div id="status"><span id="dot"></span><span id="st">Nalagam…</span><span id="info" style="margin-left:auto"></span></div>
+</div>
+<div class="menu" id="indMenu"></div>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/klinecharts@10.1.0/dist/umd/klinecharts.min.js"></script>
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem('lc_'+k); return v==null?d:JSON.parse(v) }catch(e){ return d } },
+  set(k, v){ try{ localStorage.setItem('lc_'+k, JSON.stringify(v)) }catch(e){} }
+};
+const toast = t => { const el=$('#toast'); el.textContent=t; el.style.display='block'; clearTimeout(toast.t); toast.t=setTimeout(()=>el.style.display='none',2200) };
+const fmt = (v, pp) => v==null||isNaN(v) ? '—' : Number(v).toLocaleString('en-US',{minimumFractionDigits:pp,maximumFractionDigits:pp});
+const ppFor = v => v==null ? 2 : v < 5 ? 4 : v < 50 ? 3 : 2;
+const agoTxt = ms => { const m=Math.round((Date.now()-ms)/6e4); return m<1?'pravkar':m<60?m+' min nazaj':m<1440?Math.round(m/60)+' h nazaj':Math.round(m/1440)+' dni nazaj' };
+
+/* ---------- časovni okvirji ---------- */
+const TFS = [
+  {k:'1m',res:'1',ms:6e4,p:{type:'minute',span:1},dv:'60'},
+  {k:'5m',res:'5',ms:3e5,p:{type:'minute',span:5}},
+  {k:'15m',res:'15',ms:9e5,p:{type:'minute',span:15},y:'15m'},
+  {k:'30m',res:'30',ms:18e5,p:{type:'minute',span:30}},
+  {k:'1h',res:'60',ms:36e5,p:{type:'hour',span:1},dv:'3600',y:'1h'},
+  {k:'2h',res:'120',ms:72e5,p:{type:'hour',span:2}},
+  {k:'4h',res:'60',ms:144e5,p:{type:'hour',span:4},agg:4,y:'1h'},
+  {k:'12h',res:'720',ms:432e5,p:{type:'hour',span:12},dv:'43200'},
+  {k:'1D',res:'1D',ms:864e5,p:{type:'day',span:1},dv:'1D',y:'1d'},
+  {k:'1W',res:'1D',ms:6048e5,p:{type:'week',span:1},dv:'1D',week:true,y:'1d'}
+];
+const tfOf = k => TFS.find(t=>t.k===k);
+const allowedTf = (s, t) => s.src==='yahoo' ? !!t.y : s.dvol ? !!t.dv : true;
+
+/* ---------- simboli ---------- */
+let WL = [], META = {symbols:{}}, SYM = {};
+function addSym(it){
+  const s = {id:it.id, name:it.name||it.id, src:it.src||'yahoo'};
+  if (s.src==='deribit'){ s.inst=it.inst; if (it.inst.startsWith('DVOL:')) s.dvol=it.inst.slice(5); s.pp = s.dvol?2:/^ETH/.test(it.inst)?2:/-[CP]$/.test(it.inst)?4:1 }
+  SYM[s.id]=s; return s;
+}
+const symOf = id => SYM[id] || addSym({id, src:'deribit', inst:id});
+
+let state = {
+  sym: LS.get('sym2','BTCUSD'),
+  tf: LS.get('tf','1D'),
+  tz: LS.get('tz','Europe/Ljubljana'),
+  inds: LS.get('inds',['VOL']),
+  color: LS.get('color','#2962ff'),
+  magnet: LS.get('magnet',false),
+  closed: LS.get('closedGroups',[])
+};
+
+/* ---------- Deribit WebSocket ---------- */
+const WS_URL = 'wss://www.deribit.com/ws/api/v2';
+let ws, wsReady, rid = 1, pending = {}, subs = new Map(), chartChs = new Set(), retry = 0, wsOk = false;
+function setStatus(t, cls){ $('#st').textContent=t; $('#dot').className=cls||'' }
+function connect(){
+  wsReady = new Promise(res => {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = () => { retry=0; wsOk=true; rpc('public/set_heartbeat',{interval:30}).catch(()=>{});
+      if (subs.size) ws.send(JSON.stringify({jsonrpc:'2.0',id:rid++,method:'public/subscribe',params:{channels:[...subs.keys()]}}));
+      res(); updateStatus() };
+    ws.onmessage = e => {
+      const m = JSON.parse(e.data);
+      if (m.id && pending[m.id]) { const p=pending[m.id]; delete pending[m.id]; m.error ? p.rej(m.error) : p.res(m.result); return }
+      if (m.method==='heartbeat' && m.params && m.params.type==='test_request') { rpc('public/test',{}).catch(()=>{}); return }
+      if (m.method==='subscription') { const cb=subs.get(m.params.channel); if (cb) cb(m.params.data) }
+    };
+    ws.onclose = () => { wsOk=false; updateStatus();
+      Object.values(pending).forEach(p=>p.rej({message:'Deribit povezava prekinjena'})); pending={};
+      setTimeout(connect, Math.min(1000*2**retry++, 15000)) };
+    ws.onerror = () => {};
+  });
+}
+async function rpc(method, params){
+  await wsReady;
+  return new Promise((res, rej) => { const id=rid++; pending[id]={res,rej}; ws.send(JSON.stringify({jsonrpc:'2.0',id,method,params}));
+    setTimeout(()=>{ if(pending[id]){ delete pending[id]; rej({message:'timeout'}) } }, 15000) });
+}
+function subscribe(ch, cb, forChart){ subs.set(ch, cb); if (forChart) chartChs.add(ch); if (ws && ws.readyState===1) rpc('public/subscribe',{channels:[ch]}).catch(()=>{}) }
+function unsubscribeChart(){ const chs=[...chartChs].filter(c=>!wlChs.has(c)); chartChs.forEach(c=>{ if(!wlChs.has(c)) subs.delete(c) }); chartChs.clear();
+  if (chs.length && ws && ws.readyState===1) rpc('public/unsubscribe',{channels:chs}).catch(()=>{}) }
+
+/* ---------- podatki ---------- */
+const weekStart = ts => { const d=new Date(ts); const day=(d.getUTCDay()+6)%7; return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())-day*864e5 };
+function bucket(bars, keyFn){
+  const out=[]; let w=null;
+  for (const d of bars){ const k=keyFn(d.timestamp);
+    if (!w || w.timestamp!==k){ w={timestamp:k,open:d.open,high:d.high,low:d.low,close:d.close,volume:d.volume||0}; out.push(w) }
+    else { w.high=Math.max(w.high,d.high); w.low=Math.min(w.low,d.low); w.close=d.close; w.volume+=d.volume||0 } }
+  return out;
+}
+const toWeeks = bars => bucket(bars, weekStart);
+const to4h = bars => bucket(bars, ts => Math.floor(ts/144e5)*144e5);
+
+async function fetchDeribit(s, tf, end){
+  const start = end - (tf.week?864e5:tf.ms)*1000;
+  if (s.dvol){
+    const r = await rpc('public/get_volatility_index_data',{currency:s.dvol,start_timestamp:start,end_timestamp:end,resolution:tf.dv});
+    return (r.data||[]).map(d=>({timestamp:d[0],open:d[1],high:d[2],low:d[3],close:d[4],volume:0})).sort((a,b)=>a.timestamp-b.timestamp);
+  }
+  const r = await rpc('public/get_tradingview_chart_data',{instrument_name:s.inst,start_timestamp:start,end_timestamp:end,resolution:tf.res});
+  if (!r || r.status==='no_data' || !r.ticks) return [];
+  return r.ticks.map((t,i)=>({timestamp:t,open:r.open[i],high:r.high[i],low:r.low[i],close:r.close[i],volume:r.volume[i]}));
+}
+const yCache = {};
+async function fetchYahoo(s, tf){
+  const url = 'data/'+s.id.replace(/[^A-Za-z0-9._-]/g,'_')+'_'+tf.y+'.json?v='+META.updated;
+  if (!yCache[url]){ const r = await fetch(url); if (!r.ok) throw {message:'ni datoteke '+s.id+'_'+tf.y}; yCache[url] = await r.json() }
+  const d = yCache[url];
+  let bars = d.t.map((t,i)=>({timestamp:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i],volume:d.v[i]}));
+  if (tf.agg) bars = to4h(bars);
+  if (tf.week) bars = toWeeks(bars);
+  return bars;
+}
+let curDays = [];
+
+const loader = {
+  getBars: async ({type, timestamp, callback}) => {
+    const s = symOf(state.sym), tf = tfOf(state.tf);
+    if (type==='backward' || (type==='forward' && s.src==='yahoo')) { callback([], {forward:false, backward:false}); return }
+    try {
+      let bars;
+      if (s.src==='yahoo' && !(META.symbols[s.id]||{}).ok) { updateStatus(); callback([], false); return }
+      if (s.src==='yahoo') bars = await fetchYahoo(s, tf);
+      else {
+        const end = type==='forward' && timestamp ? timestamp-1 : Date.now();
+        bars = await fetchDeribit(s, tf, end);
+        if (tf.week){ if (type==='init') curDays = bars.filter(b=>weekStart(b.timestamp)===weekStart(Date.now())); bars = toWeeks(bars);
+          if (type==='forward' && timestamp) bars = bars.filter(b=>b.timestamp<timestamp) }
+      }
+      if (type==='init'){ if (!bars.length) setStatus('Ni podatkov za '+s.id,'bad'); else { headerPrice(); updateStatus() } }
+      callback(bars, {forward: s.src!=='yahoo' && bars.length>0, backward:false});
+      if (type==='init') setTimeout(restoreDrawings, 0);
+    } catch(e){ setStatus('Napaka: '+(e.message||e)+' ('+s.id+')','bad'); callback([], false) }
+  },
+  subscribeBar: ({callback}) => {
+    unsubscribeChart();
+    const s = symOf(state.sym), tf = tfOf(state.tf);
+    if (s.src!=='deribit') return;
+    if (s.dvol){
+      subscribe('deribit_volatility_index.'+s.dvol.toLowerCase()+'_usd', d => {
+        onDvol(s, d);
+        const list = chart.getDataList(); const last = list[list.length-1]; if (!last || symOf(state.sym)!==s) return;
+        const v = d.volatility, k = tf.week ? weekStart(d.timestamp) : Math.floor(d.timestamp/tf.ms)*tf.ms;
+        const bar = k===last.timestamp ? {...last, high:Math.max(last.high,v), low:Math.min(last.low,v), close:v} : {timestamp:k, open:v, high:v, low:v, close:v, volume:0};
+        if (bar.timestamp>=last.timestamp) callback(bar);
+      }, true);
+      return;
+    }
+    subscribe('chart.trades.'+s.inst+'.'+tf.res, d => {
+      let bar = {timestamp:d.tick,open:d.open,high:d.high,low:d.low,close:d.close,volume:d.volume};
+      if (tf.week){ const i=curDays.findIndex(x=>x.timestamp===bar.timestamp); if (i>=0) curDays[i]=bar; else curDays.push(bar);
+        curDays = curDays.filter(x=>weekStart(x.timestamp)===weekStart(bar.timestamp)); bar = toWeeks(curDays)[0] }
+      callback(bar);
+      if (!wlChs.size || !live[s.id]) { live[s.id] = {...(live[s.id]||{}), last: bar.close}; headerPrice() }
+    }, true);
+  },
+  unsubscribeBar: () => unsubscribeChart()
+};
+
+/* ---------- graf ---------- */
+const chart = klinecharts.init('k', {styles:'dark', timezone: state.tz, locale:'en-US'});
+chart.setStyles({
+  grid:{horizontal:{color:'#1f2430'},vertical:{color:'#1f2430'}},
+  candle:{bar:{upColor:'#089981',downColor:'#f23645',noChangeColor:'#787b86',upBorderColor:'#089981',downBorderColor:'#f23645',upWickColor:'#089981',downWickColor:'#f23645'},
+    priceMark:{last:{upColor:'#089981',downColor:'#f23645'}},tooltip:{showRule:'always'}},
+  indicator:{ohlc:{upColor:'#089981',downColor:'#f23645'},bars:[{upColor:'rgba(8,153,129,.5)',downColor:'rgba(242,54,69,.5)',noChangeColor:'#787b86'}]},
+  xAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
+  yAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
+  separator:{color:'#2a2e39'},
+  crosshair:{horizontal:{line:{color:'#787b86'},text:{backgroundColor:'#363a45',borderColor:'#363a45'}},vertical:{line:{color:'#787b86'},text:{backgroundColor:'#363a45',borderColor:'#363a45'}}}
+});
+chart.setDataLoader(loader);
+new ResizeObserver(()=>chart.resize()).observe($('#chart'));
+
+function quote(s){
+  if (s.src==='deribit'){ const l=live[s.id]||{}; return {last:l.last, chg:l.chg, pp:s.pp, live:wsOk} }
+  const m = META.symbols[s.id]||{}; return {last:m.last, chg:m.chg, pp:ppFor(m.last), cur:m.currency, ex:m.exchange, y:m.yahoo}
+}
+function headerPrice(){
+  const s = symOf(state.sym), q = quote(s);
+  $('#symName').textContent = s.id; $('#price').textContent = fmt(q.last, q.pp);
+  const c=$('#chg'); c.textContent = q.chg==null?'':(q.chg>=0?'+':'')+q.chg.toFixed(2)+'%'; c.className = q.chg==null?'':q.chg>=0?'up':'dn';
+  if (q.last!=null) document.title = fmt(q.last,q.pp)+' · '+s.id;
+}
+function updateStatus(){
+  const s = symOf(state.sym);
+  if (s.src==='deribit') setStatus(wsOk?'V živo · Deribit':'Povezujem z Deribit…', wsOk?'ok':'bad');
+  else { const m=META.symbols[s.id]||{};
+    setStatus(m.ok ? 'Yahoo '+(m.yahoo||'')+(m.exchange?' · '+m.exchange:'')+(m.currency?' · '+m.currency:'')+' · zamik ~30 min · posodobljeno '+agoTxt(META.updated) : 'Ni podatkov za '+s.id+' (robot ga ni našel)', m.ok?'delay':'bad') }
+  const tf=tfOf(state.tf); $('#info').textContent = s.name+' · '+tf.k;
+}
+
+function load(){
+  const s = symOf(state.sym);
+  let tf = tfOf(state.tf) || tfOf('1D');
+  if (!allowedTf(s, tf)){ state.tf = s.dvol ? '1h' : '1D'; tf = tfOf(state.tf) }
+  chart.removeOverlay({groupId:'d'});
+  chart.setSymbol({ticker:s.id, pricePrecision: s.pp!=null ? s.pp : ppFor((META.symbols[s.id]||{}).last), volumePrecision: 0});
+  chart.setPeriod(tf.p);
+  renderTfs(); headerPrice(); updateStatus(); markSel();
+  LS.set('sym2',state.sym); LS.set('tf',state.tf);
+}
+function pick(id){ state.sym=id; load(); $('#app').classList.remove('wlopen') }
+
+/* ---------- watchlist ---------- */
+const live = {}; const wlChs = new Set();
+function onDvol(s, d){ const l = live[s.id] = live[s.id]||{}; l.last = d.volatility; if (l.open) l.chg = (l.last/l.open-1)*100; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() }
+function renderWL(){
+  const box = $('#wl'); let h = '<div class="wlh"><span>Simbol</span><span style="text-align:right">Zadnja</span><span style="text-align:right">Spr. %</span></div>';
+  for (const g of WL){
+    const closed = state.closed.includes(g.group);
+    h += '<div class="grp'+(closed?' closed':'')+'" data-g="'+esc(g.group)+'">'+esc(g.group.toUpperCase())+'</div>';
+    if (closed) continue;
+    for (const it of g.items){ const s=SYM[it.id];
+      h += '<div class="row" data-id="'+esc(s.id)+'"><b>'+esc(s.id)+(s.src==='deribit'?'<span class="live" title="v živo"></span>':'')+'<small>'+esc(s.name)+'</small></b><span class="n"></span><span class="p"></span></div>' }
+  }
+  const extra = LS.get('customSyms',[]);
+  if (extra.length){ h += '<div class="grp" data-g="">DERIBIT (DODANO)</div>';
+    for (const id of extra) h += '<div class="row" data-id="'+esc(id)+'"><b>'+esc(id)+'<small>Deribit · desni klik = odstrani</small></b><span class="n"></span><span class="p"></span></div>' }
+  h += '<div class="wlf">Delnice, ETF, forex, VIX, DXY in nafta: Yahoo, zamik ~30 min (posodobljeno '+(META.updated?agoTxt(META.updated):'—')+'). BTC in DVOL: Deribit v živo. Simbole urejaš v <b>watchlist.json</b> v repozitoriju.</div>';
+  box.innerHTML = h;
+  box.querySelectorAll('.row').forEach(r=>{ paintRow(r.dataset.id); r.onclick=()=>pick(r.dataset.id);
+    r.oncontextmenu=e=>{ const id=r.dataset.id; if (!LS.get('customSyms',[]).includes(id)) return; e.preventDefault(); LS.set('customSyms', LS.get('customSyms',[]).filter(x=>x!==id)); renderWL() } });
+  box.querySelectorAll('.grp[data-g]').forEach(g=>g.onclick=()=>{ const n=g.dataset.g; if(!n) return; state.closed = state.closed.includes(n)?state.closed.filter(x=>x!==n):[...state.closed,n]; LS.set('closedGroups',state.closed); renderWL() });
+  markSel();
+}
+function paintRow(id){
+  const r = document.querySelector('.row[data-id="'+CSS.escape(id)+'"]'); if (!r) return;
+  const q = quote(symOf(id));
+  r.querySelector('.n').textContent = fmt(q.last, q.pp);
+  const p = r.querySelector('.p'); p.textContent = q.chg==null?'—':(q.chg>=0?'+':'')+q.chg.toFixed(2)+'%'; p.className='p '+(q.chg==null?'':q.chg>=0?'up':'dn');
+}
+function markSel(){ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel', r.dataset.id===state.sym)) }
+function startLiveWL(){
+  for (const s of Object.values(SYM)){
+    if (s.src!=='deribit') continue;
+    if (s.dvol){
+      const ch='deribit_volatility_index.'+s.dvol.toLowerCase()+'_usd'; wlChs.add(ch); subscribe(ch, d=>onDvol(s,d));
+      const now=Date.now(); rpc('public/get_volatility_index_data',{currency:s.dvol,start_timestamp:now-3*864e5,end_timestamp:now,resolution:'1D'})
+        .then(r=>{ const d=(r.data||[]).sort((a,b)=>a[0]-b[0]); const t=d[d.length-1]; if(!t) return; const l=live[s.id]=live[s.id]||{}; l.open=t[1]; if(l.last==null) l.last=t[4]; l.chg=(l.last/l.open-1)*100; paintRow(s.id); headerPrice() }).catch(()=>{});
+    } else {
+      const ch='ticker.'+s.inst+'.100ms'; wlChs.add(ch);
+      let tPaint=0; subscribe(ch, d=>{ const l=live[s.id]=live[s.id]||{}; l.last=d.last_price; l.chg=d.stats&&d.stats.price_change;
+        const now=Date.now(); if (now-tPaint>500){ tPaint=now; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() } });
+    }
+  }
+}
+$('#wlBtn').onclick = () => { const a=$('#app'); if (matchMedia('(max-width:900px)').matches) a.classList.toggle('wlopen'); else { a.classList.toggle('nowl'); LS.set('nowl', a.classList.contains('nowl')) } setTimeout(()=>chart.resize(),0) };
+if (LS.get('nowl',false)) $('#app').classList.add('nowl');
+
+async function loadMeta(){
+  try { const r = await fetch('data/meta.json?t='+Date.now()); if (!r.ok) throw 0; const m = await r.json();
+    const changed = m.updated !== META.updated; META = m; return changed } catch(e){ return false }
+}
+setInterval(async ()=>{ if (await loadMeta()){ renderWL(); headerPrice(); if (symOf(state.sym).src==='yahoo') load(); else updateStatus() } }, 5*60*1000);
+
+/* ---------- zgornja vrstica ---------- */
+$('#custom').addEventListener('keydown', e => {
+  if (e.key!=='Enter') return;
+  const v = e.target.value.trim().toUpperCase(); if (!v) return;
+  const extra = LS.get('customSyms',[]); if (!SYM[v] && !extra.includes(v)) { extra.push(v); LS.set('customSyms', extra.slice(-15)) }
+  e.target.value=''; e.target.blur(); renderWL(); pick(v);
+});
+function renderTfs(){
+  const box=$('#tfs'); box.innerHTML=''; const s=symOf(state.sym);
+  for (const t of TFS){ const b=document.createElement('button'); b.textContent=t.k; if (t.k===state.tf) b.className='on';
+    b.disabled = !allowedTf(s,t); b.title = b.disabled ? 'Za ta vir ni na voljo' : ''; b.onclick=()=>{ state.tf=t.k; load() }; box.appendChild(b) }
+}
+const TZS = ['Europe/Ljubljana','UTC'];
+function renderTz(){ $('#tzBtn').textContent = state.tz==='UTC'?'UTC':'CET' }
+$('#tzBtn').onclick = () => { state.tz = TZS[(TZS.indexOf(state.tz)+1)%2]; chart.setTimezone(state.tz); LS.set('tz',state.tz); renderTz() };
+$('#snap').onclick = () => {
+  const url = chart.getConvertPictureUrl(true,'png','#131722');
+  const a=document.createElement('a'); a.href=url; a.download=state.sym+'_'+state.tf+'_'+new Date().toISOString().slice(0,16).replace(':','-')+'.png'; document.body.appendChild(a); a.click(); a.remove();
+};
+
+/* ---------- indikatorji ---------- */
+const MAIN_INDS = [['MA','MA (5,10,30,60)'],['EMA','EMA (6,12,20)'],['SMA','SMA'],['BOLL','Bollinger Bands'],['SAR','Parabolic SAR'],['BBI','BBI']];
+const SUB_INDS = [['VOL','Volumen'],['RSI','RSI'],['MACD','MACD'],['KDJ','KDJ (Stoch)'],['CCI','CCI'],['OBV','OBV'],['DMI','DMI / ADX'],['WR','Williams %R'],['ROC','ROC'],['MTM','Momentum'],['AO','Awesome Osc.'],['TRIX','TRIX']];
+const isMain = n => MAIN_INDS.some(m=>m[0]===n);
+function addInd(n){ isMain(n) ? chart.createIndicator({name:n, paneId:'candle_pane'}, true) : chart.createIndicator({name:n, paneId:'pane_'+n}) }
+function rmInd(n){ chart.removeIndicator({name:n, paneId: isMain(n)?'candle_pane':'pane_'+n}) }
+function renderIndMenu(){
+  const m=$('#indMenu'); m.innerHTML='';
+  const sect=(title,list)=>{ const h=document.createElement('h4'); h.textContent=title; m.appendChild(h);
+    for (const [n,l] of list){ const lab=document.createElement('label'); const c=document.createElement('input'); c.type='checkbox'; c.checked=state.inds.includes(n);
+      c.onchange=()=>{ if(c.checked){ addInd(n); state.inds.push(n) } else { rmInd(n); state.inds=state.inds.filter(x=>x!==n) } LS.set('inds',state.inds) };
+      lab.appendChild(c); lab.appendChild(document.createTextNode(l)); m.appendChild(lab) } };
+  sect('Na grafu cene', MAIN_INDS); sect('Spodnji paneli', SUB_INDS);
+}
+$('#indBtn').onclick = e => { const m=$('#indMenu'); if (m.classList.toggle('open')){ renderIndMenu(); const r=e.currentTarget.getBoundingClientRect(); m.style.left=Math.max(4,Math.min(r.left, innerWidth-240))+'px'; m.style.top=(r.bottom+4)+'px' } };
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#indMenu,#indBtn')) $('#indMenu').classList.remove('open') });
+
+/* ---------- risanje ---------- */
+const I = p => '<svg viewBox="0 0 24 24">'+p+'</svg>';
+const TOOLS = [
+  ['cursor','Kazalec', I('<path d="M6 3l12 9-5.5 1.2L16 20l-2.5 1-3-6.6L6 18z"/>')],
+  ['segment','Trend linija', I('<path d="M4 19L20 5"/><circle cx="4" cy="19" r="1.6"/><circle cx="20" cy="5" r="1.6"/>')],
+  ['rayLine','Žarek', I('<path d="M4 19L22 4"/><circle cx="4" cy="19" r="1.6"/>')],
+  ['straightLine','Podaljšana linija', I('<path d="M2 21L22 3"/>')],
+  ['horizontalStraightLine','Horizontalna linija', I('<path d="M2 12h20"/>')],
+  ['horizontalRayLine','Horizontalni žarek', I('<path d="M5 12h17"/><circle cx="5" cy="12" r="1.6"/>')],
+  ['verticalStraightLine','Vertikalna linija', I('<path d="M12 2v20"/>')],
+  ['priceLine','Cenovna linija', I('<path d="M3 15h12"/><rect x="15" y="12" width="7" height="6" rx="1"/>')],
+  ['parallelStraightLine','Paralelni kanal', I('<path d="M2 16L20 4M4 21L22 9"/>')],
+  ['priceChannelLine','Cenovni kanal', I('<path d="M2 14L22 6M2 20L22 12"/><path d="M2 17L22 9" stroke-dasharray="2 2"/>')],
+  ['fibonacciLine','Fibonacci retracement', I('<path d="M3 4h18M3 9h18M3 13h18M3 20h18"/><path d="M5 20L19 4" stroke-dasharray="2 2"/>')],
+  ['simpleAnnotation','Oznaka', I('<path d="M12 21v-7"/><rect x="4" y="3" width="16" height="10" rx="2"/>')],
+  ['simpleTag','Cenovna oznaka', I('<path d="M3 12h9l4-4h5v8h-5l-4-4"/>')]
+];
+let tool = 'cursor', selectedId = null;
+const leftBox = $('#left');
+function btn(html, title, fn){ const b=document.createElement('button'); b.innerHTML=html; b.title=title; b.setAttribute('aria-label',title); b.onclick=fn; leftBox.appendChild(b); return b }
+const sep = () => { const d=document.createElement('div'); d.className='sep'; leftBox.appendChild(d) };
+function renderTools(){ leftBox.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on', b.dataset.t===tool)) }
+for (const [n,t,ic] of TOOLS){ const b=btn(ic,t,()=>startTool(n)); b.dataset.t=n }
+sep();
+const col=document.createElement('input'); col.type='color'; col.id='color'; col.value=state.color; col.title='Barva risb';
+col.oninput=()=>{ state.color=col.value; LS.set('color',state.color); if (selectedId){ chart.overrideOverlay({id:selectedId, styles:styleFor(state.color)}); saveDrawings() } };
+leftBox.appendChild(col);
+const magBtn = btn(I('<path d="M6 3v8a6 6 0 0012 0V3"/><path d="M6 7h4M14 7h4"/>'),'Magnet (pripni na OHLC)',()=>{ state.magnet=!state.magnet; LS.set('magnet',state.magnet); magBtn.classList.toggle('on',state.magnet) });
+magBtn.classList.toggle('on', state.magnet);
+btn(I('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>'),'Zakleni / odkleni vse risbe',()=>{ const ov=myOverlays(); const lock=!(ov[0]&&ov[0].lock); ov.forEach(o=>chart.overrideOverlay({id:o.id,lock})); saveDrawings(); toast(lock?'Risbe zaklenjene':'Risbe odklenjene') });
+btn(I('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),'Skrij / pokaži risbe',()=>{ const ov=myOverlays(); const vis=!(ov[0]&&ov[0].visible); ov.forEach(o=>chart.overrideOverlay({id:o.id,visible:vis})) });
+btn(I('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-4"/>'),'Razveljavi zadnjo risbo',()=>{ const ov=myOverlays(); const o=ov[ov.length-1]; if (o){ chart.removeOverlay({id:o.id}); saveDrawings() } });
+btn(I('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),'Izbriši vse risbe na tem simbolu',()=>{ if (!myOverlays().length) return; if (btnConfirm()) { chart.removeOverlay({groupId:'d'}); saveDrawings(); toast('Vse risbe izbrisane') } });
+let confirmT=0; function btnConfirm(){ if (Date.now()-confirmT<2500) return true; confirmT=Date.now(); toast('Klikni še enkrat za brisanje vseh risb'); return false }
+
+const styleFor = c => ({line:{color:c,size:1.5},text:{color:'#fff',backgroundColor:c,borderColor:c},rect:{color:c+'22',borderColor:c},polygon:{color:c+'22',borderColor:c},point:{color:c,borderColor:c,activeColor:c,activeBorderColor:c}});
+const myOverlays = () => chart.getOverlays({groupId:'d'});
+const evts = {
+  onDrawEnd: ()=>{ setTimeout(()=>{ saveDrawings(); tool='cursor'; renderTools() },0) },
+  onPressedMoveEnd: ()=>setTimeout(saveDrawings,0),
+  onSelected: e=>{ selectedId=e.overlay.id },
+  onDeselected: ()=>{ selectedId=null },
+  onRightClick: e=>{ chart.removeOverlay({id:e.overlay.id}); setTimeout(saveDrawings,0); return true }
+};
+function startTool(n){
+  tool=n; renderTools(); if (n==='cursor') return;
+  const extra = n==='simpleAnnotation'||n==='simpleTag' ? {extendData: (prompt('Besedilo oznake:','') || 'Oznaka')} : {};
+  chart.createOverlay({name:n, groupId:'d', mode: state.magnet?'strong_magnet':'normal', styles:styleFor(state.color), ...extra, ...evts});
+}
+const drawKey = () => 'draw_'+(state.sym==='BTCUSD'?'BTC-PERPETUAL':state.sym);
+function saveDrawings(){
+  const list = myOverlays().filter(o=>o.points && o.points.length && o.points.every(p=>p.timestamp!=null && p.value!=null))
+    .map(o=>({name:o.name, points:o.points.map(p=>({timestamp:p.timestamp,value:p.value})), styles:o.styles, lock:o.lock, extendData:o.extendData}));
+  LS.set(drawKey(), list);
+}
+function restoreDrawings(){
+  chart.removeOverlay({groupId:'d'});
+  for (const d of LS.get(drawKey(),[])) chart.createOverlay({...d, groupId:'d', ...evts});
+}
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,select')) return;
+  if ((e.key==='Delete'||e.key==='Backspace') && selectedId){ chart.removeOverlay({id:selectedId}); selectedId=null; saveDrawings() }
+  if (e.key==='Escape'){ tool='cursor'; renderTools() }
+});
+
+/* ---------- start ---------- */
+(async () => {
+  renderTz(); renderTools(); connect();
+  try { const r = await fetch('watchlist.json?t='+Date.now()); WL = await r.json() }
+  catch(e){ WL = [{group:'Glavno', items:[{id:'BTCUSD',src:'deribit',inst:'BTC-PERPETUAL',name:'BTC perp (Deribit)'},{id:'DVOL',src:'deribit',inst:'DVOL:BTC',name:'BTC DVOL (Deribit)'}]}] }
+  WL.forEach(g=>g.items.forEach(addSym));
+  LS.get('customSyms',[]).forEach(id=>{ if(!SYM[id]) addSym({id,src:'deribit',inst:id}) });
+  await loadMeta();
+  if (!SYM[state.sym]) state.sym = 'BTCUSD';
+  renderWL(); startLiveWL();
+  state.inds.forEach(addInd);
+  load();
+})();
+}
+</script>
+</body>
+</html>

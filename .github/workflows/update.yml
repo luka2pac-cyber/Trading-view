@@ -1,0 +1,42 @@
+name: Posodobi podatke in objavi
+
+on:
+  schedule:
+    - cron: "*/30 * * * 1-5"   # med tednom vsakih 30 min (UTC)
+    - cron: "17 */6 * * 0,6"   # vikend vsakih 6 ur
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -U yfinance
+      - run: python scripts/fetch.py
+      - run: mkdir -p _site && cp index.html watchlist.json _site/ && cp -r data _site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

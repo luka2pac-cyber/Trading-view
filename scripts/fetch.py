@@ -1,0 +1,114 @@
+"""Pobere OHLCV z Yahoo Finance za watchlist.json in zapiše data/<id>_<interval>.json + data/meta.json."""
+import json, math, os, re, time
+import pandas as pd
+import yfinance as yf
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT = os.path.join(ROOT, "data")
+os.makedirs(OUT, exist_ok=True)
+INTERVALS = {"1d": "10y", "1h": "730d", "15m": "60d"}
+
+
+def rnd(x):
+    if x is None or (isinstance(x, float) and math.isnan(x)):
+        return None
+    return float(f"{x:.6g}")
+
+
+def fname(sid):
+    return re.sub(r"[^A-Za-z0-9._-]", "_", sid)
+
+
+def download(tickers, interval):
+    """Vrne {ticker: DataFrame} (samo neprazne)."""
+    out = {}
+    for chunk in [tickers[i:i + 25] for i in range(0, len(tickers), 25)]:
+        for attempt in range(3):
+            try:
+                df = yf.download(chunk, period=INTERVALS[interval], interval=interval, group_by="ticker",
+                                 auto_adjust=False, actions=False, progress=False, threads=True)
+                break
+            except Exception as e:  # noqa
+                print(f"  ! download {interval} poskus {attempt + 1}: {e}")
+                time.sleep(5 * (attempt + 1))
+        else:
+            continue
+        if df is None or df.empty:
+            continue
+        lvl0 = set(df.columns.get_level_values(0)) if isinstance(df.columns, pd.MultiIndex) else set()
+        for t in chunk:
+            d = df[t] if t in lvl0 else (df if not lvl0 and len(chunk) == 1 else None)
+            if d is None:
+                continue
+            d = d.dropna(subset=["Open", "High", "Low", "Close"])
+            if not d.empty:
+                out[t] = d
+        time.sleep(1)
+    return out
+
+
+def to_json(df):
+    vol = df["Volume"] if "Volume" in df else pd.Series(0, index=df.index)
+    return {
+        "t": [int(pd.Timestamp(ts).timestamp() * 1000) for ts in df.index],
+        "o": [rnd(v) for v in df["Open"]], "h": [rnd(v) for v in df["High"]],
+        "l": [rnd(v) for v in df["Low"]], "c": [rnd(v) for v in df["Close"]],
+        "v": [int(v) if v == v else 0 for v in vol],
+    }
+
+
+def ratio(a, b):
+    j = a[["Open", "High", "Low", "Close"]].join(b[["Open", "High", "Low", "Close"]], lsuffix="_a", rsuffix="_b", how="inner")
+    r = pd.DataFrame(index=j.index)
+    r["Open"] = j.Open_a / j.Open_b
+    r["Close"] = j.Close_a / j.Close_b
+    r["High"] = r[["Open", "Close"]].max(axis=1)
+    r["Low"] = r[["Open", "Close"]].min(axis=1)
+    r["Volume"] = 0
+    return r
+
+
+def main():
+    groups = json.load(open(os.path.join(ROOT, "watchlist.json"), encoding="utf-8"))
+    items = [it for g in groups for it in g["items"] if it.get("src", "yahoo") == "yahoo"]
+    # vsi kandidati + tickerji za razmerja
+    want = sorted({c for it in items for c in it.get("y", [])} | {c for it in items for c in it.get("ratio", [])})
+    data = {iv: download(want, iv) for iv in INTERVALS}
+    print("Prenešeno:", {iv: len(d) for iv, d in data.items()}, "od", len(want))
+
+    meta = {"updated": int(time.time() * 1000), "symbols": {}}
+    for it in items:
+        sid, info = it["id"], {"ok": False}
+        frames = {}
+        if "ratio" in it:
+            a, b = it["ratio"]
+            for iv in INTERVALS:
+                if a in data[iv] and b in data[iv]:
+                    frames[iv] = ratio(data[iv][a], data[iv][b])
+            used = f"{a}/{b}"
+        else:
+            used = next((c for c in it.get("y", []) if c in data["1d"]), None)
+            if used:
+                frames = {iv: data[iv][used] for iv in INTERVALS if used in data[iv]}
+        if "1d" in frames and not frames["1d"].empty:
+            for iv, df in frames.items():
+                json.dump(to_json(df), open(os.path.join(OUT, f"{fname(sid)}_{iv}.json"), "w"), separators=(",", ":"))
+            d = frames["1d"]
+            latest = frames.get("15m", d)
+            last = float(latest["Close"].iloc[-1])
+            last_day = pd.Timestamp(latest.index[-1]).date()
+            prev_rows = d[[pd.Timestamp(x).date() < last_day for x in d.index]]
+            prev = float(prev_rows["Close"].iloc[-1]) if len(prev_rows) else float(d["Close"].iloc[0])
+            info = {"ok": True, "yahoo": used, "last": rnd(last), "prev": rnd(prev),
+                    "chg": rnd((last / prev - 1) * 100) if prev else None,
+                    "lastBar": int(pd.Timestamp(latest.index[-1]).timestamp() * 1000)}
+            print(f"  + {sid:8} {used:10} {info['last']} ({info['chg']}%)")
+        else:
+            print(f"  - {sid:8} ni podatkov (kandidati: {it.get('y') or it.get('ratio') or 'brez'})")
+        meta["symbols"][sid] = info
+    json.dump(meta, open(os.path.join(OUT, "meta.json"), "w"), separators=(",", ":"))
+    print("Brez podatkov:", [k for k, v in meta["symbols"].items() if not v["ok"]] or "nič")
+
+
+if __name__ == "__main__":
+    main()

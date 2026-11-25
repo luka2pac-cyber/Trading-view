@@ -1,0 +1,452 @@
+[
+ {
+  "group": "Glavno",
+  "items": [
+   {
+    "id": "BTCUSD",
+    "src": "deribit",
+    "inst": "BTC-PERPETUAL",
+    "name": "BTC perp (Deribit)"
+   },
+   {
+    "id": "SPY",
+    "y": [
+     "SPY"
+    ],
+    "name": "SPDR S&P 500 ETF"
+   },
+   {
+    "id": "DVOL",
+    "src": "deribit",
+    "inst": "DVOL:BTC",
+    "name": "BTC DVOL (Deribit)"
+   },
+   {
+    "id": "VIX",
+    "y": [
+     "^VIX"
+    ],
+    "name": "CBOE VIX"
+   },
+   {
+    "id": "XAUUSD",
+    "y": [
+     "XAUUSD=X",
+     "GC=F"
+    ],
+    "name": "Zlato"
+   },
+   {
+    "id": "USOIL",
+    "y": [
+     "CL=F"
+    ],
+    "name": "WTI nafta (futures)"
+   },
+   {
+    "id": "EURUSD",
+    "y": [
+     "EURUSD=X"
+    ],
+    "name": "EUR/USD"
+   },
+   {
+    "id": "DXY",
+    "y": [
+     "DX-Y.NYB"
+    ],
+    "name": "US Dollar Index"
+   }
+  ]
+ },
+ {
+  "group": "Tech wide moat",
+  "items": [
+   {
+    "id": "GOOGL",
+    "y": [
+     "GOOGL"
+    ]
+   },
+   {
+    "id": "TSM",
+    "y": [
+     "TSM"
+    ]
+   },
+   {
+    "id": "ADBE",
+    "y": [
+     "ADBE"
+    ]
+   },
+   {
+    "id": "AMZN",
+    "y": [
+     "AMZN"
+    ]
+   },
+   {
+    "id": "META",
+    "y": [
+     "META"
+    ]
+   }
+  ]
+ },
+ {
+  "group": "ETF",
+  "items": [
+   {
+    "id": "CSNDX",
+    "y": [
+     "CSNDX.SW",
+     "CNDX.L"
+    ],
+    "name": "iShares Nasdaq 100 Acc"
+   },
+   {
+    "id": "VUAA",
+    "y": [
+     "VUAA.DE",
+     "VUAA.L",
+     "VUAA.MI"
+    ],
+    "name": "Vanguard S&P 500 Acc"
+   },
+   {
+    "id": "VWCE",
+    "y": [
+     "VWCE.DE",
+     "VWCE.MI"
+    ],
+    "name": "Vanguard FTSE All-World Acc"
+   }
+  ]
+ },
+ {
+  "group": "Defensive / dividend / finance",
+  "items": [
+   {
+    "id": "KRK",
+    "y": [
+     "KRKG.LJ",
+     "KRK.LJ"
+    ],
+    "name": "Krka"
+   },
+   {
+    "id": "BRK.B",
+    "y": [
+     "BRK-B"
+    ]
+   },
+   {
+    "id": "MCD",
+    "y": [
+     "MCD"
+    ]
+   }
+  ]
+ },
+ {
+  "group": "Small cap / narrow moat",
+  "items": [
+   {
+    "id": "NFLX",
+    "y": [
+     "NFLX"
+    ]
+   },
+   {
+    "id": "RACE",
+    "y": [
+     "RACE"
+    ]
+   },
+   {
+    "id": "MSTR",
+    "y": [
+     "MSTR"
+    ]
+   }
+  ]
+ },
+ {
+  "group": "Value stocks",
+  "items": [
+   {
+    "id": "MA",
+    "y": [
+     "MA"
+    ]
+   },
+   {
+    "id": "V",
+    "y": [
+     "V"
+    ]
+   },
+   {
+    "id": "AXP",
+    "y": [
+     "AXP"
+    ]
+   },
+   {
+    "id": "COST",
+    "y": [
+     "COST"
+    ]
+   },
+   {
+    "id": "WMT",
+    "y": [
+     "WMT"
+    ]
+   },
+   {
+    "id": "MSCI",
+    "y": [
+     "MSCI"
+    ]
+   },
+   {
+    "id": "SPGI",
+    "y": [
+     "SPGI"
+    ]
+   },
+   {
+    "id": "USB",
+    "y": [
+     "USB"
+    ]
+   },
+   {
+    "id": "JPM",
+    "y": [
+     "JPM"
+    ]
+   },
+   {
+    "id": "MCO",
+    "y": [
+     "MCO"
+    ]
+   },
+   {
+    "id": "ASML",
+    "y": [
+     "ASML"
+    ]
+   },
+   {
+    "id": "CPRT",
+    "y": [
+     "CPRT"
+    ]
+   },
+   {
+    "id": "CTAS",
+    "y": [
+     "CTAS"
+    ]
+   },
+   {
+    "id": "ICE",
+    "y": [
+     "ICE"
+    ]
+   },
+   {
+    "id": "KO",
+    "y": [
+     "KO"
+    ]
+   },
+   {
+    "id": "PEP",
+    "y": [
+     "PEP"
+    ]
+   },
+   {
+    "id": "ORLY",
+    "y": [
+     "ORLY"
+    ]
+   },
+   {
+    "id": "AZO",
+    "y": [
+     "AZO"
+    ]
+   },
+   {
+    "id": "VRSN",
+    "y": [
+     "VRSN"
+    ]
+   },
+   {
+    "id": "BKNG",
+    "y": [
+     "BKNG"
+    ]
+   }
+  ]
+ },
+ {
+  "group": "Mag 7",
+  "items": [
+   {
+    "id": "NVDA",
+    "y": [
+     "NVDA"
+    ]
+   },
+   {
+    "id": "MSFT",
+    "y": [
+     "MSFT"
+    ]
+   },
+   {
+    "id": "AAPL",
+    "y": [
+     "AAPL"
+    ]
+   },
+   {
+    "id": "TSLA",
+    "y": [
+     "TSLA"
+    ]
+   }
+  ]
+ },
+ {
+  "group": "Slovenija",
+  "items": [
+   {
+    "id": "SBITOP",
+    "y": [
+     "^SBITOP",
+     "SBITOP.LJ"
+    ],
+    "name": "SBITOP indeks"
+   },
+   {
+    "id": "903246",
+    "y": [],
+    "name": "? (ne vem, kaj je)"
+   },
+   {
+    "id": "NLB",
+    "y": [
+     "NLBR.LJ",
+     "NLB.LJ"
+    ],
+    "name": "NLB"
+   },
+   {
+    "id": "LKPG",
+    "y": [
+     "LKPG.LJ"
+    ],
+    "name": "Luka Koper"
+   },
+   {
+    "id": "PETG",
+    "y": [
+     "PETG.LJ"
+    ],
+    "name": "Petrol"
+   }
+  ]
+ },
+ {
+  "group": "Various",
+  "items": [
+   {
+    "id": "SPCX",
+    "y": [
+     "SPCX"
+    ]
+   },
+   {
+    "id": "MU",
+    "y": [
+     "MU"
+    ]
+   },
+   {
+    "id": "INTC",
+    "y": [
+     "INTC"
+    ]
+   },
+   {
+    "id": "SPOT",
+    "y": [
+     "SPOT"
+    ]
+   },
+   {
+    "id": "JD",
+    "y": [
+     "JD"
+    ]
+   },
+   {
+    "id": "BABA",
+    "y": [
+     "BABA"
+    ]
+   }
+  ]
+ },
+ {
+  "group": "Macro indicators",
+  "items": [
+   {
+    "id": "US02Y",
+    "y": [
+     "2YY=F"
+    ],
+    "name": "US 2Y donos (futures)"
+   },
+   {
+    "id": "US10Y",
+    "y": [
+     "^TNX"
+    ],
+    "name": "US 10Y donos"
+   },
+   {
+    "id": "S5TH",
+    "y": [],
+    "name": "% S&P500 nad 200 MA (ni vira)"
+   },
+   {
+    "id": "NDTH",
+    "y": [],
+    "name": "% Nasdaq100 nad 200 MA (ni vira)"
+   },
+   {
+    "id": "MMTH",
+    "y": [],
+    "name": "% vseh nad 200 MA (ni vira)"
+   },
+   {
+    "id": "RSP/SPY",
+    "ratio": [
+     "RSP",
+     "SPY"
+    ],
+    "name": "Equal weight / S&P 500"
+   }
+  ]
+ }
+]
