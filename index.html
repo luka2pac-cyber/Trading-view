@@ -786,11 +786,11 @@ const GROUPS = [
   {id:'cursor', items:[['cross','Križ'],['dot','Pika'],['arrow','Puščica']]},
   {id:'lines', items:[['segment','Trend linija','Alt+T'],['rayLine','Žarek'],['straightLine','Podaljšana linija'],['horizontalStraightLine','Horizontalna linija','Alt+H'],['horizontalRayLine','Horizontalni žarek'],['horizontalSegment','Horizontalni segment'],['verticalStraightLine','Vertikalna linija'],['priceLine','Cenovna linija'],['parallelStraightLine','Paralelni kanal'],['priceChannelLine','Cenovni kanal']]},
   {id:'fib', items:[['fibonacciLine','Fib retracement','Alt+F']]},
+  {id:'measure', items:[['longPosition','Long pozicija'],['shortPosition','Short pozicija'],['datePriceRange','Merilo: cena in čas (%)','Shift'],['priceRange','Cenovni razpon (%)'],['dateRange','Časovni razpon']]},
   {id:'shapes', items:[['brush','Čopič'],['rect','Pravokotnik'],['circle','Krog'],['triangle','Trikotnik']]},
-  {id:'measure', items:[['longPosition','Long pozicija'],['shortPosition','Short pozicija'],['priceRange','Cenovni razpon'],['dateRange','Časovni razpon'],['datePriceRange','Cenovni in časovni razpon']]},
   {id:'text', items:[['textBox','Besedilo'],['simpleAnnotation','Opomba'],['simpleTag','Cenovna oznaka']]}
 ];
-const HINTS = {longPosition:'Klik 1: vstop · klik 2: cilj · klik 3: stop  (Esc = prekliči)', shortPosition:'Klik 1: vstop · klik 2: cilj · klik 3: stop  (Esc = prekliči)', triangle:'Trije kliki za oglišča', brush:'Drži in vleci', parallelStraightLine:'Trije kliki', priceChannelLine:'Trije kliki', datePriceRange:'Klik na začetek in konec', priceRange:'Klik na začetek in konec', dateRange:'Klik na začetek in konec'};
+const HINTS = {longPosition:'Klik 1: vstop · klik 2: cilj · klik 3: stop  (Esc = prekliči)', shortPosition:'Klik 1: vstop · klik 2: cilj · klik 3: stop  (Esc = prekliči)', triangle:'Trije kliki za oglišča', brush:'Drži in vleci', parallelStraightLine:'Trije kliki', priceChannelLine:'Trije kliki', datePriceRange:'Merilo: klikni začetek in konec — pokaže razliko v %, ceni, svečah in času', priceRange:'Klik na začetek in konec', dateRange:'Klik na začetek in konec'};
 let groupSel = LS.get('groupSel', {}), tool = null, selectedId = null;
 const left = $('#left');
 function toolBtn(icon, title, fn){ const b=document.createElement('button'); b.innerHTML=icon; b.title=title; b.setAttribute('aria-label',title); b.onclick=fn;
@@ -810,7 +810,7 @@ function renderLeft(){
     w = wrapEl(...els);
     if (g.id==='cursor' || g.id==='text') sepL();
   }
-  const rb=toolBtn(ICON.ruler,'Ravnilo (meri ceno in čas)',()=> tool==='datePriceRange'?cancelTool():startTool('datePriceRange')); if (tool==='datePriceRange') rb.classList.add('on'); wrapEl(rb);
+  const rb=toolBtn(ICON.ruler,'Merilo – razlika v % in času (Shift+klik)',()=> tool==='datePriceRange'?cancelTool():startTool('datePriceRange')); if (tool==='datePriceRange') rb.classList.add('on'); wrapEl(rb);
   wrapEl(toolBtn(ICON.zoomIn,'Povečaj',()=>chart.zoomAtCoordinate(1.4)));
   wrapEl(toolBtn(ICON.zoomOut,'Pomanjšaj',()=>chart.zoomAtCoordinate(0.7)));
   sepL();
@@ -899,6 +899,8 @@ function dtbAction(a, anchor){
 }
 dtb.onclick = e => { const b=e.target.closest('[data-a]'); if (b) dtbAction(b.dataset.a, b) };
 
+/* ---------- Shift+klik = merilo (kot v TradingView) ---------- */
+$('#k').addEventListener('pointerdown', e => { if (e.shiftKey && !tool && e.button===0){ startTool('datePriceRange') } }, true);
 /* ---------- desni klik na graf ---------- */
 $('#k').addEventListener('contextmenu', e => {
   e.preventDefault();
@@ -1052,7 +1054,9 @@ function moreMenu(anchor){
 $('#mMore').onclick = e => moreMenu(e.currentTarget);
 $('#fab').onclick = e => {
   let h='';
-  const secs=[['Linije','lines'],['Fibonacci','fib'],['Oblike','shapes'],['Napovedi in meritve','measure'],['Besedilo','text']];
+  const QUICK=[['datePriceRange','Merilo %'],['segment','Trend linija'],['horizontalStraightLine','Horizontalna'],['horizontalRayLine','Horiz. žarek'],['fibonacciLine','Fib'],['longPosition','Long'],['shortPosition','Short'],['rect','Pravokotnik']];
+  h+='<div class="hd">Najpogostejša</div><div class="tgrid">'+QUICK.map(([k,l])=>'<div class="it'+(tool===k?' on':'')+'" data-v="'+k+'">'+(k==='datePriceRange'?ICON.ruler:ICON[k])+'<span>'+l+'</span></div>').join('')+'</div>';
+  const secs=[['Linije','lines'],['Fibonacci','fib'],['Napovedi in meritve','measure'],['Geometrijske oblike','shapes'],['Besedilo in oznake','text']];
   for (const [t,id] of secs){ const g=GROUPS.find(x=>x.id===id); h+='<div class="hd">'+t+'</div><div class="tgrid">'+g.items.map(i=>'<div class="it'+(tool===i[0]?' on':'')+'" data-v="'+i[0]+'">'+ICON[i[0]]+'<span>'+esc(i[1])+'</span></div>').join('')+'</div>' }
   const ov=myOverlays(), locked=ov.length>0&&ov.every(o=>o.lock), hidden=ov.length>0&&ov.every(o=>!o.visible);
   h+='<div class="hd">Nastavitve risanja</div><div class="tgrid">'+
