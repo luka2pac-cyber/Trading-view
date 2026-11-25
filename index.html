@@ -296,7 +296,7 @@ async function fetchDeribit(s, tf, end){
 /* ---------- Bitstamp (BTC zgodovina od 2011, kot BITSTAMP:BTCUSD v TW) ---------- */
 const BS_STEP = {'1m':60,'3m':180,'5m':300,'15m':900,'30m':1800,'1h':3600,'2h':7200,'4h':14400,'12h':43200,'D':86400,'W':86400,'M':86400};
 async function fetchBitstamp(s, tf, end){
-  const step = BS_STEP[tf.k], pages = tf.agg==='M' ? 6 : 1; let out=[], e=Math.floor(end/1000);
+  const step = BS_STEP[tf.k], pages = tf.agg==='M' ? 6 : tf.agg==='W' ? 3 : 1; let out=[], e=Math.floor(end/1000);
   for (let i=0;i<pages;i++){
     const r = await fetch('https://www.bitstamp.net/api/v2/ohlc/'+s.pair+'/?step='+step+'&limit=1000&end='+e); if (!r.ok) throw {message:'Bitstamp '+r.status};
     const j = await r.json(); const part=((j.data&&j.data.ohlc)||[]).map(o=>({timestamp:+o.timestamp*1000,open:+o.open,high:+o.high,low:+o.low,close:+o.close,volume:+o.volume}));
@@ -909,7 +909,7 @@ function paintRow(id){
 function markSel(){ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel', r.dataset.id===state.sym)) }
 function startLiveWL(){
   for (const s of Object.values(SYM)){ if (s.src!=='bitstamp') continue;
-    fetch('https://www.bitstamp.net/api/v2/ticker/'+s.pair+'/').then(r=>r.json()).then(t=>{ const l=live[s.id]=live[s.id]||{}; l.open=+t.open; if (l.last==null) l.last=+t.last; l.chg=(l.last/l.open-1)*100; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() }).catch(()=>{});
+    fetch('https://www.bitstamp.net/api/v2/ohlc/'+s.pair+'/?step=86400&limit=1').then(r=>r.json()).then(j=>{ const t=j.data.ohlc[j.data.ohlc.length-1]; const l=live[s.id]=live[s.id]||{}; l.open=+t.open; if (l.last==null) l.last=+t.close; l.chg=(l.last/l.open-1)*100; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() }).catch(()=>{});
     let tp=0; bsSub(s.pair, t=>{ const l=live[s.id]=live[s.id]||{}; l.last=t.price; if (l.open) l.chg=(l.last/l.open-1)*100; const now=Date.now(); if (now-tp>500){ tp=now; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() } }, 'wl_'+s.id);
   }
   for (const s of Object.values(SYM)){
