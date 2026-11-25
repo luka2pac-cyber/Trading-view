@@ -25,12 +25,12 @@
   {
    "id": "CGO9XM",
    "sym": "BTCUSD",
-   "price": 80229,
+   "price": 82592,
    "op": "above",
    "note": "",
    "status": "active",
-   "created": 1795628963703,
-   "ref": 59486.9
+   "created": 1795628967711,
+   "ref": 59476.13
   }
  ],
  "bot": "luka_charts_alarm_bot"
