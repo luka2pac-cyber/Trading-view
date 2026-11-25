@@ -330,7 +330,7 @@ if (!inds0) inds0 = (LS.get('inds',['VOL'])||[]).map(n=>({name:n}));
 if (!LS.get('indsV3',false)){ inds0 = [{name:'LMA'},{name:'LVOL'},{name:'RSIMFI'}, ...inds0.filter(o=>!['VOL','LMA','LVOL','RSIMFI','MA','EMA'].includes(o.name))]; LS.set('inds2',inds0); LS.set('indsV3',true) }
 let state = {
   sym: LS.get('sym2','BTCUSD'),
-  tf: (tfOf((()=>{ if (!LS.get('tfFix1',false)){ LS.set('tfFix1',true); if (LS.get('tf','D')==='M') LS.set('tf','D') } return LS.get('tf','D') })())||tfOf('D')).k,
+  tf: 'D', // ob odprtju vedno dnevni (D)
   tz: LS.get('tz','Europe/Ljubljana'),
   inds: inds0,
   color: LS.get('color','#2962ff'),
@@ -637,6 +637,9 @@ klinecharts.registerIndicator({
 });
 
 /* ---------- graf ---------- */
+// med zoomom s koleščkom cenovna os ostane fiksna (kot ročno raztegnjena os v TV) do 'auto' / Ponastavi / menjave simbola ali intervala
+const yAxes = () => { try { return chart.getDrawPaneById('candle_pane').getYAxisComponents() } catch(e){ return [] } };
+function yAuto(on){ yAxes().forEach(a=>a.setAutoCalcTickFlag(on)); if (on) try{ chart.layout({measureWidth:true, update:true, buildYAxisTick:true}) }catch(e){} }
 const chart = klinecharts.init('k', {styles:'dark', timezone: state.tz, locale:'en-US'});
 window.__lc = () => ({chart, state});
 // mehkejši zoom s kolescem/touchpadom (privzeti je bil prehiter, posebej na touchpadu in v Firefoxu)
@@ -648,6 +651,7 @@ $('#k').addEventListener('wheel', e => {
   // kot TradingView: zadnja sveča ostane na mestu (desno), graf se stisne/raztegne vodoravno z leve
   const r = $('#k').getBoundingClientRect(), sz = chart.getSize('candle_pane','main'), w = (sz&&sz.width)||r.width, n = chart.getDataList().length;
   let x = w; if (n){ const px = chart.convertToPixel([{dataIndex:n-1}], {paneId:'candle_pane'}); const lx = (Array.isArray(px)?px[0]:px).x; if (lx!=null && lx>=0 && lx<=w) x = lx }
+  yAuto(false);
   chart.zoomAtCoordinate(f, {x, y:e.clientY-r.top});
 }, {capture:true, passive:false});
 const isMob = () => matchMedia('(max-width:900px)').matches;
@@ -696,7 +700,7 @@ function load(){
   const s = symOf(state.sym);
   let tf = tfOf(state.tf);
   if (!allowedTf(s, tf)){ state.tf = s.dvol ? '1h' : 'D'; tf = tfOf(state.tf) }
-  closeDtb(); selectedId=null;
+  closeDtb(); selectedId=null; yAuto(true);
   chart.removeOverlay({groupId:'d'});
   chart.setSymbol({ticker:s.id, pricePrecision: s.pp!=null ? s.pp : ppFor((META.symbols[s.id]||{}).last), volumePrecision: 0});
   chart.setPeriod(tf.p);
@@ -1036,7 +1040,7 @@ $('#k').addEventListener('contextmenu', e => {
         if (v==='rmi'){ state.inds.forEach(o=>rmInd(o.name)); state.inds=[]; saveInds() } });
   }, 0);
 });
-function resetView(keepAxis){ const saved=(tfOf(LS.get('tf','D'))||tfOf('D')).k; if (saved!==state.tf && allowedTf(symOf(state.sym), tfOf(saved))){ state.tf=saved; pendingRange=null; load() } chart.setBarSpace(8); chart.setOffsetRightDistance(80); chart.scrollToRealTime(); if (!keepAxis) setAxis(state.axis) }
+function resetView(keepAxis){ yAuto(true); const saved='D'; if (saved!==state.tf && allowedTf(symOf(state.sym), tfOf(saved))){ state.tf=saved; pendingRange=null; load() } chart.setBarSpace(8); chart.setOffsetRightDistance(80); chart.scrollToRealTime(); if (!keepAxis) setAxis(state.axis) }
 
 /* ---------- spodnja vrstica ---------- */
 const RANGES = [['1D',864e5,'5m','15m'],['5D',4.32e8,'15m','15m'],['1M',2.592e9,'1h','1h'],['3M',7.776e9,'4h','4h'],['6M',1.5552e10,'D','D'],['YTD',null,'D','D'],['1Y',3.1536e10,'D','D'],['5Y',1.5768e11,'W','W'],['All',Infinity,'M','M']];
@@ -1057,7 +1061,7 @@ function tick(){ const t=new Date().toLocaleTimeString('sl-SI',{timeZone:state.t
   $('#clock').textContent=t+' '+off }
 setInterval(tick,1000); tick();
 $('#clockBtn').onclick = e => openPop(e.currentTarget, item('Europe/Ljubljana','Ljubljana (CET)','',state.tz!=='UTC')+item('UTC','UTC','',state.tz==='UTC'), v=>{ state.tz=v; chart.setTimezone(v); LS.set('tz',v); tick() }, 'up');
-function setAxis(a){ state.axis=a; LS.set('axis2',a); chart.overrideYAxis({paneId:'candle_pane', name: a==='pct'?'percentage':a==='log'?'logarithm':'normal'});
+function setAxis(a){ state.axis=a; LS.set('axis2',a); chart.overrideYAxis({paneId:'candle_pane', name: a==='pct'?'percentage':a==='log'?'logarithm':'normal'}); yAuto(true);
   $('#pctBtn').classList.toggle('on',a==='pct'); $('#logBtn').classList.toggle('on',a==='log'); $('#autoBtn').classList.toggle('on',a!=='pct') }
 $('#pctBtn').onclick=()=>setAxis(state.axis==='pct'?'normal':'pct'); $('#logBtn').onclick=()=>setAxis(state.axis==='log'?'normal':'log'); $('#autoBtn').onclick=()=>{ setAxis(state.axis==='pct'?'normal':state.axis); resetView(true) };
 
