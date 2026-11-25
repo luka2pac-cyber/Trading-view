@@ -6,7 +6,7 @@ import yfinance as yf
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "data")
 os.makedirs(OUT, exist_ok=True)
-INTERVALS = {"1d": "10y", "1h": "730d", "15m": "60d"}
+INTERVALS = {"1d": "max", "1h": "730d", "15m": "60d"}
 
 
 def rnd(x):
