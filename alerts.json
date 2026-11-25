@@ -11,6 +11,16 @@
    "status": "triggered",
    "created": 1795619547804,
    "triggered": 1795620837510
+  },
+  {
+   "id": "7M4O8V",
+   "sym": "BTCUSD",
+   "price": 80084,
+   "op": "above",
+   "note": "",
+   "status": "active",
+   "created": 1795628947615,
+   "ref": 59494.94
   }
  ],
  "bot": "luka_charts_alarm_bot"
