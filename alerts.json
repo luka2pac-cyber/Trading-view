@@ -3,16 +3,6 @@
  "tg_offset": 926652564,
  "alerts": [
   {
-   "id": "TEST1",
-   "sym": "BTCUSD",
-   "price": 1000,
-   "op": "above",
-   "note": "Testni alarm (Claude) – sistem deluje",
-   "status": "triggered",
-   "created": 1795619547804,
-   "triggered": 1795620837510
-  },
-  {
    "id": "7M4O8V",
    "sym": "BTCUSD",
    "price": 75227,
@@ -31,6 +21,16 @@
    "status": "active",
    "created": 1795628967711,
    "ref": 59476.13
+  },
+  {
+   "id": "TEST1",
+   "sym": "BTCUSD",
+   "price": 1000,
+   "op": "above",
+   "note": "Testni alarm (Claude) – sistem deluje",
+   "status": "triggered",
+   "created": 1795619547804,
+   "triggered": 1795620837510
   }
  ],
  "bot": "luka_charts_alarm_bot"
