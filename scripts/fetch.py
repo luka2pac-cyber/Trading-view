@@ -186,6 +186,11 @@ def main():
     want = sorted({c for it in items for c in it.get("y", [])} | {c for it in items for c in it.get("ratio", [])})
     data = {iv: download(want, iv) for iv in INTERVALS}
     print("Prenešeno:", {iv: len(d) for iv, d in data.items()}, "od", len(want))
+    for _t in ["EURUSD=X"]:  # DEBUG začasno
+        if _t in data["1d"]:
+            print("DBG1d", _t, "\n" + data["1d"][_t].tail(12).to_string())
+        if _t in data["1h"]:
+            print("DBG1h", _t, "\n" + data["1h"][_t].tail(30).to_string())
 
     try:
         ext = extended([t for t in want if US_RE.match(t)])
