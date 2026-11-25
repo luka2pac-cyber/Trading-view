@@ -49,11 +49,14 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #rstrip button.on{background:var(--hov);color:#fff}
 .wlTop{display:flex;align-items:center;padding:8px 8px 4px 12px;gap:4px}
 .wlTop b{flex:1;font-size:14px}
-.wlh{display:grid;grid-template-columns:1fr 78px 62px;padding:6px 12px;color:var(--mute);font-size:12px;border-bottom:1px solid var(--line)}
+.wlh{display:grid;grid-template-columns:1fr 78px 62px;padding-left:40px!important;padding:6px 12px;color:var(--mute);font-size:12px;border-bottom:1px solid var(--line)}
 .wlList{overflow-y:auto;flex:1}
 .grp{padding:12px 12px 4px;color:var(--mute);font-size:11px;cursor:pointer}
 .grp::before{content:"⌄  "}.grp.closed::before{content:"›  "}
-.row{display:grid;grid-template-columns:1fr 78px 62px;align-items:center;padding:6px 12px;cursor:pointer;border:1px solid transparent;font-variant-numeric:tabular-nums}
+.row .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;margin-right:8px}
+.row .a{display:none}
+.row .sy{display:inline}
+.row{display:grid;grid-template-columns:28px 1fr 78px 62px;align-items:center;padding:6px 12px;cursor:pointer;border:1px solid transparent;font-variant-numeric:tabular-nums}
 .row:hover{background:var(--hov)}
 .row.sel{border-color:#5d606b;border-radius:4px;background:var(--panel)}
 .row b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -124,6 +127,40 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   #mnav{grid-column:1/-1;grid-row:3}
   #wl{position:fixed!important;top:48px!important;bottom:58px!important;left:0;right:0;width:auto!important;z-index:35;border-radius:0!important;margin:0!important;box-shadow:none!important}
   #dtb{top:auto;bottom:70px}
+  /* --- watchlist kot TradingView mobilna aplikacija --- */
+  #app{--bg:#000}
+  body,#top,#mnav{background:#000}
+  #wl{background:#000!important;font-family:Roboto,-apple-system,"Segoe UI",system-ui,sans-serif}
+  #wl .wlTop{padding:6px 10px 6px 8px;gap:6px;border-bottom:1px solid #1e1e1e;height:58px}
+  #wl .wlTop>b,#wl .wlTop>#wlSearch{display:none}
+  #wlPills{flex:1;overflow-x:auto;gap:8px;scrollbar-width:none;align-items:center}
+  #wlPills::-webkit-scrollbar{display:none}
+  #wlPills button{flex:none;font-size:19px;font-weight:500;color:#8a8a8a;padding:7px 14px;border-radius:12px;background:transparent}
+  #wlPills button.on{background:#2e2e2e;color:#f0f0f0}
+  #wl .wlh{display:none}
+  #wl .grp{padding:18px 18px 8px;font-size:13px;letter-spacing:.03em;color:#8a8a8a;font-weight:500}
+  #wl .row{display:grid;grid-template-columns:50px minmax(0,1fr) auto auto;grid-template-rows:auto auto;column-gap:0;row-gap:3px;align-items:center;
+    min-height:74px;padding:10px 17px;margin:0;border:0;border-radius:0;position:relative;font-family:inherit}
+  #wl .row::after{content:"";position:absolute;left:68px;right:0;bottom:0;height:1px;background:#262626}
+  #wl .row.sel{background:#121212;border:0}
+  #wl .row:hover{background:#0d0d0d}
+  #wl .row .ic{grid-row:1/3;grid-column:1;width:38px;height:38px;font-size:18px;margin:0}
+  #wl .row b{display:contents}
+  #wl .row .sy{grid-row:1;grid-column:2;font-size:20px;font-weight:700;color:#dcdcdc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #wl .row small{grid-row:2;grid-column:2;font-size:18px;font-weight:400;color:#808080;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px}
+  #wl .row .n{grid-row:1;grid-column:3/5;font-size:20px;font-weight:600;color:#dcdcdc;text-align:right}
+  #wl .row .a{display:inline;grid-row:2;grid-column:3;justify-self:end;font-size:18px;margin-right:12px;white-space:nowrap}
+  #wl .row .p{grid-row:2;grid-column:4;white-space:nowrap;justify-self:end;font-size:18px;text-align:right}
+  #wl .row .live{width:7px;height:7px;margin-left:6px}
+  #wl .wlf{font-size:12px;color:#666;padding:16px 18px 24px}
+  #mnav{height:58px}
+  #mnav button{font-size:13.5px;font-weight:500;color:#9a9a9a;gap:4px}
+  #mnav button .i{width:26px;height:26px;stroke-width:1.7}
+  #mnav button.on{color:#f0f0f0}
+  #mnav button:hover,#mnav button:active{background:none}
+  #app.wlopen #top{display:none!important}
+  #app.wlopen #wl{top:0!important}
+
   #hint{top:8px;white-space:normal;max-width:90%;text-align:center}
 
   #app,#app.nowl{grid-template-columns:42px 1fr 0 0}
@@ -163,7 +200,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   <div id="left"></div>
   <div id="chart"><div id="k"></div><button id="fab" class="monly" data-popbtn="1" title="Risanje"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 6l3 3"/></svg></button><div id="dtb"></div><div id="hint"></div></div>
   <div id="wl">
-    <div class="wlTop"><b>Watchlist</b><button id="wlSearch" title="Poišči / dodaj simbol"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
+    <div class="wlTop"><button id="wlMenu" class="monly" title="Skupine" style="padding:6px"><svg class="i" viewBox="0 0 24 24" style="width:26px;height:26px"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div id="wlPills" class="monly"></div><b>Watchlist</b><button id="wlSearch" title="Poišči / dodaj simbol"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
     <div class="wlh"><span>Simbol</span><span style="text-align:right">Zadnja</span><span style="text-align:right">Spr. %</span></div>
     <div class="wlList" id="wlList"></div>
   </div>
@@ -919,6 +956,14 @@ $('#snap').onclick = () => { const url = chart.getConvertPictureUrl(true,'png','
 
 /* ---------- watchlist ---------- */
 function onDvol(s, d){ const l = live[s.id] = live[s.id]||{}; l.last = d.volatility; if (l.open) l.chg = (l.last/l.open-1)*100; paintRow(s.id); if (symOf(state.sym)===s) headerPrice() }
+const ICOL = {BTCUSD:['#f7931a','₿'],'BTC-PERP':['#f7931a','₿'],DVOL:['#3a3a3a','D'],XAUUSD:['#d6a640','Au'],USOIL:['#1e1e1e','◆'],EURUSD:['#1e4fd8','€'],DXY:['#1f7a5c','$'],SPY:['#e8e8e8','S'],VIX:['#43a047','V'],
+  GOOGL:['#ffffff','G'],TSM:['#d32f2f','T'],ADBE:['#e5261f','A'],AMZN:['#ff9900','a'],META:['#0668e1','M'],NFLX:['#141414','N'],MSTR:['#f7931a','₿'],RACE:['#d40000','F'],MCD:['#da291c','M'],NVDA:['#76b900','N'],MSFT:['#00a4ef','M'],AAPL:['#e8e8e8',''],TSLA:['#cc0000','T'],
+  KRK:['#00a651','K'],KRKG:['#00a651','K'],NLB:['#1d3a8a','N'],NLBR:['#1d3a8a','N'],SBITOP:['#0b5aa6','S'],LKPG:['#0a4fa0','L'],PETG:['#d71920','P']};
+function icoHtml(s){ let [bg,t] = ICOL[s.id] || [null, null];
+  if (!bg){ let h=0; for (const ch of s.id) h=(h*31+ch.charCodeAt(0))>>>0; bg='hsl('+(h%360)+',45%,38%)'; t=s.id.replace(/[^A-Z0-9]/gi,'').charAt(0) }
+  const light = /^#(e|f|d)/i.test(bg); return '<span class="ic" style="background:'+bg+';color:'+(light?'#111':'#fff')+'">'+esc(t)+'</span>' }
+function rowHtml(s, sub){ const live=(s.src==='deribit'||s.src==='bitstamp');
+  return '<div class="row" data-id="'+esc(s.id)+'">'+icoHtml(s)+'<b><span class="sy">'+esc(s.id)+(live?'<span class="live" title="v živo"></span>':'')+'</span><small>'+esc(sub||s.name)+'</small></b><span class="n"></span><span class="a"></span><span class="p"></span></div>' }
 function renderWL(){
   let h = '';
   for (const g of WL){
@@ -926,23 +971,28 @@ function renderWL(){
     h += '<div class="grp'+(closed?' closed':'')+'" data-g="'+esc(g.group)+'">'+esc(g.group.toUpperCase())+'</div>';
     if (closed) continue;
     for (const it of g.items){ const s=SYM[it.id];
-      h += '<div class="row" data-id="'+esc(s.id)+'"><b>'+esc(s.id)+((s.src==='deribit'||s.src==='bitstamp')?'<span class="live" title="v živo"></span>':'')+'<small>'+esc(s.name)+'</small></b><span class="n"></span><span class="p"></span></div>' }
+      h += rowHtml(s) }
   }
   const extra = LS.get('customSyms',[]);
   if (extra.length){ h += '<div class="grp" data-g="">DERIBIT (DODANO)</div>';
-    for (const id of extra) h += '<div class="row" data-id="'+esc(id)+'"><b>'+esc(id)+'<small>desni klik = odstrani</small></b><span class="n"></span><span class="p"></span></div>' }
+    for (const id of extra) h += rowHtml(symOf(id), 'desni klik = odstrani') }
   h += '<div class="wlf">Delnice/ETF/forex: Yahoo, slovenske delnice: Ljubljanska borza; robot osveži vsakih 15 min med 8 in 23 uro (posodobljeno '+(META.updated?agoTxt(META.updated):'—')+'). BTC in DVOL: Deribit v živo. Simbole urejaš v <b>watchlist.json</b>.</div>';
   const box=$('#wlList'); box.innerHTML = h;
   box.querySelectorAll('.row').forEach(r=>{ paintRow(r.dataset.id); r.onclick=()=>pick(r.dataset.id);
     r.oncontextmenu=e=>{ const id=r.dataset.id; if (!LS.get('customSyms',[]).includes(id)) return; e.preventDefault(); LS.set('customSyms', LS.get('customSyms',[]).filter(x=>x!==id)); renderWL() } });
   box.querySelectorAll('.grp[data-g]').forEach(g=>g.onclick=()=>{ const n=g.dataset.g; if(!n) return; state.closed = state.closed.includes(n)?state.closed.filter(x=>x!==n):[...state.closed,n]; LS.set('closedGroups',state.closed); renderWL() });
   markSel();
+  const pills=$('#wlPills'); if (pills){ pills.innerHTML = WL.map((g,i)=>'<button data-gi="'+i+'"'+(i===0?' class="on"':'')+'>'+esc(g.group)+'</button>').join('');
+    pills.onclick = e => { const b=e.target.closest('[data-gi]'); if (!b) return; pills.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+      const gEl=[...document.querySelectorAll('#wlList .grp')][+b.dataset.gi]; if (gEl) $('#wlList').scrollTo({top:gEl.offsetTop-$('#wlList').offsetTop, behavior:'smooth'}) } }
 }
 function paintRow(id){
   const r = document.querySelector('.row[data-id="'+CSS.escape(id)+'"]'); if (!r) return;
   const q = quote(symOf(id));
   r.querySelector('.n').textContent = fmt(q.last, q.pp);
-  const p = r.querySelector('.p'); p.textContent = q.chg==null?'—':(q.chg>=0?'+':'')+q.chg.toFixed(2)+'%'; p.className='p '+(q.chg==null?'':q.chg>=0?'up':'dn');
+  const p = r.querySelector('.p'); p.textContent = q.chg==null?'—':(q.chg>=0?'+':'−')+Math.abs(q.chg).toFixed(2)+'%'; p.className='p '+(q.chg==null?'':q.chg>=0?'up':'dn');
+  const a = r.querySelector('.a'); if (a){ const ab = (q.last!=null && q.chg!=null) ? q.last - q.last/(1+q.chg/100) : null;
+    a.textContent = ab==null ? '' : (ab>=0?'+':'−')+fmt(Math.abs(ab), q.pp); a.className='a '+(ab==null?'':ab>=0?'up':'dn') }
 }
 function markSel(){ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel', r.dataset.id===state.sym)) }
 function startLiveWL(){
