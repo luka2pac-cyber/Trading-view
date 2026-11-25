@@ -42,11 +42,11 @@ def download(tickers, interval):
                 continue
             d = d.dropna(subset=["Open", "High", "Low", "Close"])
             if interval == "1d" and t.endswith("=X") and len(d) > 1:
-                # Yahoo pri forexu (EURUSD=X …) daje dnevni Open ≈ Close (same doji sveče).
-                # Forex teče neprekinjeno, zato je Open = prejšnji Close (kot v TV).
+                # Yahoo pri forexu (EURUSD=X …) daje dnevni Open ≈ Close = cena ob ZAČETKU dneva (doji sveče),
+                # High/Low pa sta za cel dan. Pravi Close dneva = Open naslednjega dne; zadnji (današnji) bar ostane.
                 d = d.copy()
-                po = d["Close"].shift(1)
-                d.loc[po.notna(), "Open"] = po[po.notna()]
+                nc = d["Open"].shift(-1)
+                d.loc[nc.notna(), "Close"] = nc[nc.notna()]
                 d["High"] = d[["High", "Open", "Close"]].max(axis=1)
                 d["Low"] = d[["Low", "Open", "Close"]].min(axis=1)
             if not d.empty:

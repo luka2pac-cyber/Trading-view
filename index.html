@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0f0f0f">
+<meta name="theme-color" content="#000000">
 <title>Luka Charts</title>
 <style>
-:root{--bg:#0f0f0f;--chart:#131722;--panel:#1e222d;--pop:#1e222d;--line:#2a2e39;--hov:#2a2e39;--ink:#d1d4dc;--mute:#787b86;--acc:#2962ff;--up:#089981;--dn:#f23645}
+:root{--bg:#000000;--chart:#0f0f0f;--panel:#1e1e1e;--pop:#1e1e1e;--line:#2a2a2a;--hov:#2a2a2a;--ink:#d1d4dc;--mute:#787b86;--acc:#2962ff;--up:#089981;--dn:#f23645}
 *{box-sizing:border-box;min-width:0}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.3 -apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Ubuntu,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
 button,select,input{font:inherit;color:var(--ink);background:transparent;border:0;border-radius:4px}
@@ -58,10 +58,10 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 .row .ed{display:none}
 .wlList.edit .row .n,.wlList.edit .row .a,.wlList.edit .row .p,.wlList.edit .row .x{display:none!important}
 .wlList.edit .row .ed{display:flex;gap:4px;grid-column:3/5;grid-row:1/3;justify-self:end;align-items:center}
-.ed button{width:30px;height:28px;border-radius:6px;background:#2a2e39;color:#d1d4dc;font-size:15px;line-height:1;padding:0}
+.ed button{width:30px;height:28px;border-radius:6px;background:#2a2a2a;color:#d1d4dc;font-size:15px;line-height:1;padding:0}
 .ed button[data-a=rm]{color:#f23645}
 .ed button:disabled{opacity:.3}
-.row.drag{position:relative;z-index:5;background:#1e222d!important;box-shadow:0 4px 14px rgba(0,0,0,.6);opacity:.95;pointer-events:none}
+.row.drag{position:relative;z-index:5;background:#1e1e1e!important;box-shadow:0 4px 14px rgba(0,0,0,.6);opacity:.95;pointer-events:none}
 .row.dropB{box-shadow:inset 0 2px 0 #2962ff}
 .row.dropA{box-shadow:inset 0 -2px 0 #2962ff}
 .wlList.edit .row{touch-action:none}
@@ -117,12 +117,12 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #dtb button{height:32px;padding:0 8px}
 #dtb .sw{width:18px;height:18px;border-radius:3px;border:1px solid #fff4}
 #toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);background:var(--pop);padding:8px 14px;border-radius:6px;display:none;z-index:60;box-shadow:0 4px 18px #000a}
-#optCard{position:absolute;right:70px;top:8px;z-index:20;background:rgba(19,23,34,0.92);border:1px solid #2a2e39;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;max-width:330px;box-shadow:0 4px 14px #0008}
+#optCard{position:absolute;right:70px;top:8px;z-index:20;background:rgba(19,23,34,0.92);border:1px solid #2a2a2a;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;max-width:330px;box-shadow:0 4px 14px #0008}
 #optCard .oh{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
 #optCard .oh button{padding:2px 6px;font-size:14px}
 #optCard.min>*:not(.oh){display:none}
 #optCard .oh{cursor:pointer}
-#optCard .oh2{margin-top:6px;border-top:1px solid #2a2e39;padding-top:5px}
+#optCard .oh2{margin-top:6px;border-top:1px solid #2a2a2a;padding-top:5px}
 #optCard .om{color:#9598a1;font-size:11px}
 #optCard table{border-collapse:collapse;margin:4px 0 2px;font-variant-numeric:tabular-nums}
 #optCard th{color:#9598a1;font-weight:400;text-align:left;padding:0 8px 0 0;font-size:11px}
@@ -136,14 +136,14 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #tpad .tpy{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed #9598a1}
 #tpad .tpd{position:absolute;width:9px;height:9px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px #2962ff}
 #tpad .tpl{position:absolute;right:0;transform:translateY(-50%);background:#2962ff;color:#fff;font-size:12px;padding:3px 6px;border-radius:3px;font-variant-numeric:tabular-nums}
-#tpad .tpc{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#1e222d;color:#fff;border-radius:20px;padding:10px 18px;font-size:15px;box-shadow:0 2px 10px #000a}
+#tpad .tpc{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#1e1e1e;color:#fff;border-radius:20px;padding:10px 18px;font-size:15px;box-shadow:0 2px 10px #000a}
 #hint{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:var(--acc);color:#fff;padding:5px 12px;border-radius:4px;font-size:12px;display:none;z-index:25;pointer-events:none;white-space:nowrap}
 .monly{display:none!important}
 #maEye{position:absolute;right:66px;bottom:14px;z-index:20;height:30px;padding:0 9px;border-radius:15px;background:rgba(42,46,57,0.9);color:#d1d4dc;font-size:12px;font-weight:600;gap:5px;box-shadow:0 2px 8px #0008}
 #maEye svg{width:17px;height:17px}
 #maEye.off{color:#787b86}
 @media(max-width:900px){#maEye{right:118px;bottom:22px;height:34px;font-size:13px}}
-#fab{position:absolute;right:62px;bottom:14px;z-index:20;width:46px;height:46px;border-radius:50%;background:#2a2e39;justify-content:center;box-shadow:0 4px 14px #000a}
+#fab{position:absolute;right:62px;bottom:14px;z-index:20;width:46px;height:46px;border-radius:50%;background:#2a2a2a;justify-content:center;box-shadow:0 4px 14px #000a}
 #mnav{background:var(--bg);border-top:1px solid var(--line);justify-content:space-around;align-items:stretch;padding-bottom:env(safe-area-inset-bottom)}
 #mnav button{flex:1;flex-direction:column;gap:2px;font-size:11px;color:var(--mute);border-radius:0;justify-content:center}
 #mnav button.on{color:#fff}
@@ -166,7 +166,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   #symBtn{padding:6px 8px!important}
   #mTfQ{gap:0;align-items:center;order:1}
   #mTfQ button{font-size:17px;font-weight:600;color:#9a9a9a;padding:6px 7px!important;border-radius:6px}
-  #mTfQ button.on{color:#fff;background:#2a2e39}
+  #mTfQ button.on{color:#fff;background:#2a2a2a}
   #mTf{font-size:15px;color:#9a9a9a;order:2;padding:6px 5px!important}
   #symBtn{order:0}
   #price{order:3}#chg{order:4}
@@ -585,7 +585,7 @@ function smaArr(vals, n){ const out=[]; let s=0, c=0; for (let i=0;i<vals.length
 function emaArr(vals, n){ const out=[], k=2/(n+1); let e=null, s=0; for (let i=0;i<vals.length;i++){ if (i<n-1){ s+=vals[i]; out.push(null) } else if (i===n-1){ s+=vals[i]; e=s/n; out.push(e) } else { e=vals[i]*k+e*(1-k); out.push(e) } } return out }
 function stdArr(vals, n, ma){ return vals.map((v,i)=>{ if (i<n-1) return null; let s=0; for (let j=i-n+1;j<=i;j++) s+=(vals[j]-ma[i])**2; return Math.sqrt(s/n) }) }
 const EYE_OPEN='M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12zM12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 1 0 0-5.6z', EYE_OFF='M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12zM4 4l16 16';
-const eyeFeat = on => ({id:'eye', position:'middle', type:'path', content:{path: on?EYE_OPEN:EYE_OFF, style:'stroke', lineWidth:1.6}, size:15, color:'#9598a1', activeColor:'#ffffff', backgroundColor:'rgba(0,0,0,0)', activeBackgroundColor:'#2a2e39', borderRadius:3, paddingLeft:3, paddingRight:3, paddingTop:2, paddingBottom:2, marginLeft:6, marginRight:2, marginTop:0, marginBottom:0});
+const eyeFeat = on => ({id:'eye', position:'middle', type:'path', content:{path: on?EYE_OPEN:EYE_OFF, style:'stroke', lineWidth:1.6}, size:15, color:'#9598a1', activeColor:'#ffffff', backgroundColor:'rgba(0,0,0,0)', activeBackgroundColor:'#2a2a2a', borderRadius:3, paddingLeft:3, paddingRight:3, paddingTop:2, paddingBottom:2, marginLeft:6, marginRight:2, marginTop:0, marginBottom:0});
 const legend = (name, params, items, feats) => ({name, calcParamsText:params, features:feats||[], legends: items.map(([t,v,c])=>({title:t?{text:t+' ',color:'#787b86'}:'', value:{text:v,color:c}}))});
 const tipIdx = (chart, crosshair, len) => crosshair && crosshair.dataIndex!=null ? Math.min(crosshair.dataIndex, len-1) : len-1;
 // 1) Volumen kot v TW: stolpci v spodnjem delu cenovnega okna (24 % prosojnost) + SMA 20 (bela, 1 px)
@@ -604,7 +604,7 @@ klinecharts.registerIndicator({
     ctx.stroke(); return true;
   },
   createTooltipDataSource: ({chart, indicator, crosshair}) => { const r=indicator.result||[]; const d=r[tipIdx(chart,crosshair,r.length)]||{};
-    return legend('Vol', ' '+indicator.calcParams[0], [['',bigN(d.vol), d.up?'#089981':'#f23645'],['',bigN(d.ma),'#ffffff']]) }
+    return legend('Vol', ' '+indicator.calcParams[0], [['',bigN(d.vol), d.up?'#089981':'#f23645'],['',bigN(d.ma),'#ffffff']], [eyeFeat(indicator.visible!==false)]) }
 });
 // 2) MA-ji iz "mikul's combo indicator": EMA 10/50/200/21, SMA 7/200, Bollinger 20/2
 const LMA_LINES = [
@@ -643,7 +643,7 @@ function mfiArr(list, n){ const tp=list.map(k=>(k.high+k.low+k.close)/3), out=[]
     out.push(p+m===0 ? null : m===0 ? 100 : 100-100/(1+p/m)) } return out }
 klinecharts.registerIndicator({
   name:'RSIMFI', shortName:'RSI + MFI', calcParams:[14,20,80], precision:2, minValue:0, maxValue:100,
-  figures:[{key:'rsi', title:'RSI: ', type:'line', styles:()=>({color:'#4caf50', size:1})},{key:'mfi', title:'MFI: ', type:'line', styles:()=>({color:'#ffffff', size:2})}],
+  figures:[{key:'rsi', title:'RSI: ', type:'line', styles:()=>({color:'#4caf50', size:1})},{key:'mfi', title:'MFI: ', type:'line', styles:()=>({color:'#ffffff', size:1})}],
   calc: (list, ind) => { const [n]=ind.calcParams; const r=rsiArr(list.map(k=>k.close), n), m=mfiArr(list, n); return list.map((k,i)=>({rsi:r[i], mfi:m[i]})) },
   draw: ({ctx, chart, indicator, bounding, xAxis, yAxis}) => {
     const r=indicator.result||[], [, lo, hi]=indicator.calcParams; const vr=chart.getVisibleRange(), bs=chart.getBarSpace();
@@ -658,7 +658,7 @@ klinecharts.registerIndicator({
     return false;
   },
   createTooltipDataSource: ({chart, indicator, crosshair}) => { const r=indicator.result||[]; const d=r[tipIdx(chart,crosshair,r.length)]||{};
-    return legend('RSI + MFI', ' '+indicator.calcParams.join(' '), [['RSI',d.rsi==null?'—':d.rsi.toFixed(2),'#4caf50'],['MFI',d.mfi==null?'—':d.mfi.toFixed(2),'#ffffff']]) }
+    return legend('RSI + MFI', ' '+indicator.calcParams.join(' '), [['RSI',d.rsi==null?'—':d.rsi.toFixed(2),'#4caf50'],['MFI',d.mfi==null?'—':d.mfi.toFixed(2),'#ffffff']], [eyeFeat(indicator.visible!==false)]) }
 });
 
 /* ---------- graf ---------- */
@@ -681,7 +681,7 @@ $('#k').addEventListener('wheel', e => {
 }, {capture:true, passive:false});
 const isMob = () => matchMedia('(max-width:900px)').matches;
 function applyStyles(){
-  const gc = state.grid ? '#1f2430' : 'rgba(0,0,0,0)', u=state.upC, d=state.dnC;
+  const gc = state.grid ? '#1c1c1c' : 'rgba(0,0,0,0)', u=state.upC, d=state.dnC;
   const area = state.ct==='area' || state.ct==='line', lines = state.cursor==='cross';
   chart.setStyles({
     grid:{horizontal:{color:gc},vertical:{color:gc}},
@@ -690,10 +690,10 @@ function applyStyles(){
       area:{lineColor:'#2962ff',lineSize:2,backgroundColor: state.ct==='line' ? [{offset:0,color:'rgba(0,0,0,0)'},{offset:1,color:'rgba(0,0,0,0)'}] : [{offset:0,color:'rgba(41,98,255,0.01)'},{offset:1,color:'rgba(41,98,255,0.25)'}]},
       priceMark:{last:{upColor:u,downColor:d}},tooltip:{showRule: isMob() ? 'follow_cross' : 'always', text:{size: isMob()?11:12}}},
     indicator:{tooltip:{showRule: isMob() ? 'follow_cross' : 'always', text:{size: isMob()?10:12}}, ohlc:{upColor:u,downColor:d},bars:[{upColor:u+'80',downColor:d+'80',noChangeColor:'#787b86'}]},
-    xAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
-    yAxis:{axisLine:{color:'#2a2e39'},tickLine:{color:'#2a2e39'},tickText:{color:'#787b86'}},
-    separator:{color:'#2a2e39'},
-    crosshair:{show: state.cursor!=='arrow', horizontal:{line:{show:lines,color:'#787b86'},text:{backgroundColor:'#363a45',borderColor:'#363a45'}},vertical:{line:{show:lines,color:'#787b86'},text:{backgroundColor:'#363a45',borderColor:'#363a45'}}}
+    xAxis:{axisLine:{color:'#2a2a2a'},tickLine:{color:'#2a2a2a'},tickText:{color:'#b2b5be'}},
+    yAxis:{axisLine:{color:'#2a2a2a'},tickLine:{color:'#2a2a2a'},tickText:{color:'#b2b5be'}},
+    separator:{color:'#2a2a2a'},
+    crosshair:{show: state.cursor!=='arrow', horizontal:{line:{show:lines,color:'#787b86'},text:{backgroundColor:'#363636',borderColor:'#363636'}},vertical:{line:{show:lines,color:'#787b86'},text:{backgroundColor:'#363636',borderColor:'#363636'}}}
   });
 }
 applyStyles();
@@ -720,6 +720,13 @@ function updateStatus(){
     setStatus(m.ok ? (s.ljse ? 'Ljubljanska borza · samo dnevne sveče · zamik ~15-30 min' : 'Yahoo '+(m.yahoo||'')+' · zamik ~15-30 min')+' · posodobljeno '+agoTxt(META.updated) : 'Ni podatkov za '+s.id, m.ok?'delay':'bad') }
   $('#info').textContent = s.name;
 }
+// valuta, v kateri se trguje (prikazana v naslovu grafa, kot v TV)
+const CUR_SFX = {DE:'EUR',F:'EUR',MI:'EUR',PA:'EUR',AS:'EUR',MC:'EUR',BR:'EUR',VI:'EUR',LS:'EUR',IR:'EUR',HE:'EUR',SW:'CHF',L:'GBX',WA:'PLN',TO:'CAD',HK:'HKD',T:'JPY',AX:'AUD',CO:'DKK',ST:'SEK',OL:'NOK'};
+function curOf(s){
+  if (s.cur) return s.cur; if (s.dvol) return ''; if (s.src==='bitstamp' || s.src==='deribit') return 'USD'; if (s.ljse) return 'EUR';
+  const y = (META.symbols[s.id]||{}).yahoo || ''; if (!y || y.includes('/') || y.startsWith('^') || y.startsWith('DX-Y')) return '';
+  if (/=X$/.test(y)) return y.slice(3,6); const m = y.match(/\.([A-Z]{1,2})$/); return m ? (CUR_SFX[m[1]]||'') : 'USD';
+}
 function load(){
   if (OPT.on && state.sym!==OPT_SYM) optOff();
   const s = symOf(state.sym);
@@ -728,6 +735,7 @@ function load(){
   closeDtb(); selectedId=null; yAuto(true);
   chart.removeOverlay({groupId:'d'});
   chart.setSymbol({ticker:s.id, pricePrecision: s.pp!=null ? s.pp : ppFor((META.symbols[s.id]||{}).last), volumePrecision: 0});
+  { const c=curOf(s); chart.setStyles({candle:{tooltip:{title:{color:'#d1d4dc', template:'{ticker} · {period}'+(c?' · '+c:'')}}}}) }
   chart.setPeriod(tf.p);
   $('#symBtn').classList.toggle('long', state.sym.length>7);
   renderTfs(); headerPrice(); updateStatus(); markSel();
@@ -824,9 +832,12 @@ const IND = [
 const indMeta = n => IND.find(x=>x[0]===n);
 const paneOf = n => indMeta(n)[2] ? 'candle_pane' : 'pane_'+n;
 const MA_IND=['LMA','MA','EMA','SMA','BOLL','BBI','AVP','SAR'];
-function addInd(o){ const m=indMeta(o.name); if (!m) return; const ci={name:o.name, paneId:paneOf(o.name)}; if (MA_IND.includes(o.name) && LS.get('maHidden',false)) return;
+function addInd(o){ const m=indMeta(o.name); if (!m) return; const ci={name:o.name, paneId:paneOf(o.name), visible:!indHid(o.name)};
   const p = o.params && o.params.length ? o.params : m[3]; if (p.length) ci.calcParams=p; chart.createIndicator(ci, !!m[2]) }
-function setMaHidden(h){ LS.set('maHidden',h); for (const o of state.inds) if (MA_IND.includes(o.name)){ rmInd(o.name); if (!h) addInd(o) }
+function indHid(n){ return MA_IND.includes(n) ? LS.get('maHidden',false) : LS.get('indHidden',[]).includes(n) }
+// oko v legendi: skrije/pokaže indikator, legenda (in oko) ostane, da ga lahko spet vklopiš
+function toggleInd(n){ if (MA_IND.includes(n)) return setMaHidden(!LS.get('maHidden',false)); const h=LS.get('indHidden',[]).filter(x=>x!==n), vis=indHid(n); if (!vis) h.push(n); LS.set('indHidden',h); chart.overrideIndicator({name:n, paneId:paneOf(n), visible:vis}) }
+function setMaHidden(h){ LS.set('maHidden',h); for (const o of state.inds) if (MA_IND.includes(o.name)) chart.overrideIndicator({name:o.name, paneId:paneOf(o.name), visible:!h});
   const b=$('#maEye'); if (b){ b.classList.toggle('off',h); b.innerHTML=SV('<path d="'+(h?EYE_OFF:EYE_OPEN)+'"/>')+'<span>MA</span>' } toast(h?'MA skriti':'MA prikazani') }
 function rmInd(n){ if (indMeta(n)) chart.removeIndicator({name:n, paneId:paneOf(n)}) }
 const saveInds = () => LS.set('inds2', state.inds);
@@ -1124,7 +1135,7 @@ $('#setBtn').onclick = () => {
   $('#sRst').onclick=()=>{ $('#sUp').value='#089981'; $('#sDn').value='#f23645'; $('#sGrid').checked=true; upd() };
 };
 $('#fsBtn').onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen() } catch(e){ toast('Celozaslonski način ni podprt') } };
-$('#snap').onclick = () => { const url = chart.getConvertPictureUrl(true,'png','#131722');
+$('#snap').onclick = () => { const url = chart.getConvertPictureUrl(true,'png','#0f0f0f');
   const a=document.createElement('a'); a.href=url; a.download=state.sym.replace(/[^A-Za-z0-9._-]/g,'_')+'_'+state.tf+'_'+new Date().toISOString().slice(0,16).replace(':','-')+'.png'; document.body.appendChild(a); a.click(); a.remove() };
 
 /* ---------- watchlist ---------- */
@@ -1619,7 +1630,7 @@ setInterval(checkVersion, 120000); document.addEventListener('visibilitychange',
   renderWL(); startLiveWL();
   state.inds.forEach(addInd);
   { const h=LS.get('maHidden',false), b=$('#maEye'); b.classList.toggle('off',h); b.innerHTML=SV('<path d="'+(h?EYE_OFF:EYE_OPEN)+'"/>')+'<span>MA</span>'; b.onclick=()=>setMaHidden(!LS.get('maHidden',false)) }
-  chart.subscribeAction('onIndicatorTooltipFeatureClick', d=>{ if (d && d.feature && d.feature.id==='eye') setMaHidden(!LS.get('maHidden',false)) });
+  chart.subscribeAction('onIndicatorTooltipFeatureClick', d=>{ if (d && d.feature && d.feature.id==='eye' && d.indicator) toggleInd(d.indicator.name) });
   load(); setAxis(state.axis);
 })();
 }
