@@ -1417,7 +1417,7 @@ let alertCtx = null, selAlert = null;
 klinecharts.registerOverlay({ name:'alertLine', totalStep:2, needDefaultYAxisFigure:true,
   createPointFigures: ({chart, coordinates, bounding, overlay}) => { const y=coordinates[0].y, p=overlay.points[0].value;
     return [{type:'line', attrs:{coordinates:[{x:0,y},{x:bounding.width,y}]}, styles:{style:'dashed', color:'#ff9800', size:1, dashedValue:[5,4]}},
-      {type:'text', attrs:{x:bounding.width-6, y, text:'🔔 '+pfmt(chart,p)+(overlay.extendData&&overlay.extendData.note?'  '+overlay.extendData.note:''), align:'right', baseline:'bottom'}, styles:{...lbl('#ff9800'), color:'#000', size:11}, ignoreEvent:true}] },
+      {type:'text', attrs:{x:bounding.width-6, y, text:'🔔 '+pfmt(chart,p)+(overlay.extendData&&overlay.extendData.note?'  '+overlay.extendData.note:''), align:'right', baseline:'bottom'}, styles:{...lbl('#ff9800'), color:'#000', size:isM()?14:11, paddingTop:isM()?7:4, paddingBottom:isM()?7:4, paddingLeft:isM()?10:6, paddingRight:isM()?10:6}}] },
   createYAxisFigures: ({chart, coordinates, bounding, overlay}) => [{type:'text', attrs:{x:0, y:coordinates[0].y, text:pfmt(chart, overlay.points[0].value), align:'left', baseline:'middle'}, styles:{...lbl('#ff9800'), color:'#000'}}],
   performEventPressedMove: ({points, performPoint}) => { points[0].value = performPoint.value }
 });
