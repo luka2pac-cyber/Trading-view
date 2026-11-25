@@ -15,12 +15,12 @@
   {
    "id": "KOYHFY",
    "sym": "BTCUSD",
-   "price": 54498,
+   "price": 54433,
    "op": "below",
    "note": "",
    "status": "active",
-   "created": 1795639729795,
-   "ref": 60024.06
+   "created": 1795639732262,
+   "ref": 60030.32
   }
  ],
  "bot": "luka_charts_alarm_bot"
