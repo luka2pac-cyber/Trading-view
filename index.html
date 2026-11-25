@@ -61,6 +61,8 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 .row.sel{border-color:#5d606b;border-radius:4px;background:var(--panel)}
 .row b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .n,.row .p{text-align:right;white-space:nowrap;overflow:hidden}
+.row .x{grid-column:2/5;text-align:right;font-size:11px;color:var(--mute);white-space:nowrap;font-variant-numeric:tabular-nums}
+.row .x .xs{color:#9598a1}
 .row small{display:block;color:var(--mute);font-size:10px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .live{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--up);margin-left:5px;vertical-align:middle}
 .wlf{padding:12px;color:var(--mute);font-size:11px;line-height:1.5}
@@ -142,6 +144,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   .monly{display:flex!important}
   #app,#app.nowl{grid-template-rows:65px minmax(0,1fr) 58px!important;grid-template-columns:minmax(0,1fr)!important}
   #top{grid-column:1/-1;border-bottom:1px solid var(--line);gap:0}
+  #top #resetBtn{display:none!important}
   #top .vs,#tfFav,#tfMore,#redoBtn,#setBtn,#alertBtn,#fsBtn,#snap,#wlBtnM,#indBtn span,#optBtn{display:none!important}
   #symBtn{min-width:0;padding:8px 12px;background:transparent;font-size:21.5px}
   #top button{padding:6px 7px}
@@ -189,6 +192,8 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   #wl .row .n{grid-row:1;grid-column:3/5;font-size:20px;font-weight:600;color:#dcdcdc;text-align:right}
   #wl .row .a{display:inline;grid-row:2;grid-column:3;justify-self:end;font-size:18px;margin-right:12px;white-space:nowrap}
   #wl .row .p{grid-row:2;grid-column:4;white-space:nowrap;justify-self:end;font-size:18px;text-align:right}
+  #wl .row .x{grid-row:3;grid-column:2/5;font-size:15px;margin-top:1px}
+  #wl .row{grid-template-rows:auto auto auto}
   #wl .row .live{width:7px;height:7px;margin-left:6px}
   #wl .wlf{font-size:12px;color:#666;padding:16px 18px 24px}
   #mnav{height:58px}
@@ -229,6 +234,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
     <button id="undoBtn" title="Razveljavi (Ctrl+Z)"><svg class="i" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-4"/></svg></button>
     <button id="redoBtn" title="Uveljavi (Ctrl+Y)"><svg class="i" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h4"/></svg></button>
     <div class="grow"></div>
+    <button id="resetBtn" title="Ponastavi pogled grafa (Alt+R)"><svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v5h5"/></svg></button>
     <button id="alertBtn" title="Alarmi (Telegram)"><svg class="i" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/></svg></button>
     <button id="drbBtn" title="Deribit pozicije (ključ samo za branje)" style="font-weight:700;font-size:15px">₿</button>
     <button id="setBtn" title="Nastavitve"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
@@ -1076,7 +1082,7 @@ function icoHtml(s){ let [bg,t] = ICOL[s.id] || [null, null];
   if (!bg){ let h=0; for (const ch of s.id) h=(h*31+ch.charCodeAt(0))>>>0; bg='hsl('+(h%360)+',45%,38%)'; t=s.id.replace(/[^A-Z0-9]/gi,'').charAt(0) }
   const light = /^#(e|f|d)/i.test(bg); return '<span class="ic" style="background:'+bg+';color:'+(light?'#111':'#fff')+'">'+esc(t)+'</span>' }
 function rowHtml(s, sub){ const live=(s.src==='deribit'||s.src==='bitstamp');
-  return '<div class="row" data-id="'+esc(s.id)+'">'+icoHtml(s)+'<b><span class="sy">'+esc(s.id)+(live?'<span class="live" title="v živo"></span>':'')+'</span><small>'+esc(sub||s.name)+'</small></b><span class="n"></span><span class="a"></span><span class="p"></span></div>' }
+  return '<div class="row" data-id="'+esc(s.id)+'">'+icoHtml(s)+'<b><span class="sy">'+esc(s.id)+(live?'<span class="live" title="v živo"></span>':'')+'</span><small>'+esc(sub||s.name)+'</small></b><span class="n"></span><span class="a"></span><span class="p"></span><span class="x"></span></div>' }
 function renderWL(){
   let h = '';
   for (const g of WL){
@@ -1106,6 +1112,9 @@ function paintRow(id){
   const p = r.querySelector('.p'); p.textContent = q.chg==null?'—':(q.chg>=0?'+':'−')+Math.abs(q.chg).toFixed(2)+'%'; p.className='p '+(q.chg==null?'':q.chg>=0?'up':'dn');
   const a = r.querySelector('.a'); if (a){ const ab = (q.last!=null && q.chg!=null) ? q.last - q.last/(1+q.chg/100) : null;
     a.textContent = ab==null ? '' : (ab>=0?'+':'−')+fmt(Math.abs(ab), q.pp); a.className='a '+(ab==null?'':ab>=0?'up':'dn') }
+  const x = r.querySelector('.x'); if (x){ const e=(META.symbols[id]||{}).ext;
+    if (e && e.p!=null && Date.now()-e.t < 20*3600e3){ x.innerHTML='<span class="xs">'+(e.s==='pre'?'☀ Pre':'☾ Post')+'</span> '+fmt(e.p, q.pp)+' <span class="'+(e.chg>=0?'up':'dn')+'">'+(e.chg>=0?'+':'−')+Math.abs(e.chg).toFixed(2)+'%</span>'; x.style.display='' }
+    else { x.textContent=''; x.style.display='none' } }
 }
 function markSel(){ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel', r.dataset.id===state.sym)) }
 function startLiveWL(){
@@ -1148,11 +1157,11 @@ $('#mTf').onclick = e => { const s=symOf(state.sym);
   h += '<div class="hd">Obdobje</div><div class="tgrid">'+RANGES.map(r=>'<div class="it" data-v="R:'+r[0]+'"><b>'+r[0]+'</b></div>').join('')+'</div>';
   openPop(e.currentTarget, h, v=>{ if (v.startsWith('R:')){ const b=document.querySelector('#ranges [data-r="'+v.slice(2)+'"]'); if (b) b.click() } else { state.tf=v; load() } }) };
 function moreMenu(anchor){
-  const h = item('search','Iskanje simbola',SV('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>'))+item('alarms','Alarmi (Telegram)',SV('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/>'))+item('drb','Deribit pozicije (ključ samo za branje)',SV('<path d="M4 7h16v12H4z"/><path d="M9 7V5h6v2"/>'))+
+  const h = item('reset','Ponastavi pogled grafa',SV('<path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v5h5"/>'))+item('search','Iskanje simbola',SV('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>'))+item('alarms','Alarmi (Telegram)',SV('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/>'))+item('drb','Deribit pozicije (ključ samo za branje)',SV('<path d="M4 7h16v12H4z"/><path d="M9 7V5h6v2"/>'))+
     item('ind','Indikatorji',SV('<path d="M3 17l5-6 4 4 8-9"/>'))+
     item('ct','Vrsta grafa',CTS.find(c=>c[0]===state.ct)[2])+'<hr>'+
     item('log','Logaritemska lestvica','',state.axis==='log')+item('pct','Odstotna lestvica','',state.axis==='pct')+item('lin','Navadna lestvica','',state.axis==='normal')+
-    item('reset','Ponastavi pogled grafa','')+'<hr>'+
+    '<hr>'+
     item('cross','Kazalec: križ',ICON.cross,state.cursor==='cross')+item('dot','Kazalec: pika',ICON.dot,state.cursor==='dot')+'<hr>'+
     item('tz','Časovni pas: '+(state.tz==='UTC'?'UTC':'Ljubljana'),'')+item('set','Nastavitve grafa','')+item('snap','Posnetek grafa','')+item('fs','Celozaslonski način','')+'<hr><div class="hd" style="text-transform:none">Verzija '+esc(BUILD.slice(0,7))+' · zaslon '+innerWidth+' px</div>';
   openPop(anchor, h, v=>{
@@ -1479,6 +1488,7 @@ function alertDialog(){
   const go=$('#ghOut'); if (go) go.onclick=e=>{ e.preventDefault(); LS.set('ghToken',''); closeModal(); loadAlerts(); toast('Aplikacija odklopljena') };
 }
 $('#alertBtn').onclick = alertDialog;
+$('#resetBtn').onclick = () => resetView(true);
 $('#drbBtn').onclick = () => posDialog();
 setInterval(loadAlerts, 120000);
 

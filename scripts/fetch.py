@@ -139,6 +139,46 @@ def ljse_fetch(it):
     return out
 
 
+US_RE = re.compile(r"^[A-Z]{1,5}(-[A-Z])?$")
+
+
+def extended(tickers):
+    """Pre/post-market zadnja cena za ameriške delnice/ETF (Yahoo 5m prepost)."""
+    out = {}
+    for chunk in [tickers[i:i + 25] for i in range(0, len(tickers), 25)]:
+        try:
+            df = yf.download(chunk, period="5d", interval="5m", prepost=True, group_by="ticker",
+                             auto_adjust=False, actions=False, progress=False, threads=False)
+        except Exception as e:  # noqa
+            print("  ! prepost:", e)
+            continue
+        if df is None or df.empty:
+            continue
+        lvl0 = set(df.columns.get_level_values(0)) if isinstance(df.columns, pd.MultiIndex) else set()
+        for t in chunk:
+            d = df[t] if t in lvl0 else (df if not lvl0 and len(chunk) == 1 else None)
+            if d is None:
+                continue
+            d = d.dropna(subset=["Close"])
+            if d.empty:
+                continue
+            idx = d.index.tz_convert("America/New_York") if d.index.tz is not None else d.index.tz_localize("UTC").tz_convert("America/New_York")
+            mins = idx.hour * 60 + idx.minute
+            reg = (mins >= 570) & (mins < 960) & (idx.dayofweek < 5)
+            if not reg.any():
+                continue
+            last_reg_i = max(i for i, r in enumerate(reg) if r)
+            reg_close = float(d["Close"].iloc[last_reg_i])
+            if last_reg_i == len(d) - 1:
+                continue  # zadnja sveča je v rednem trgovanju → ni pre/post
+            p = float(d["Close"].iloc[-1]); ts = idx[-1]
+            sess = "post" if ts.date() == idx[last_reg_i].date() and ts.hour * 60 + ts.minute >= 960 else "pre"
+            out[t] = {"s": sess, "p": rnd(p), "chg": rnd((p / reg_close - 1) * 100), "base": rnd(reg_close),
+                      "t": int(ts.timestamp() * 1000)}
+        time.sleep(1)
+    return out
+
+
 def main():
     groups = json.load(open(os.path.join(ROOT, "watchlist.json"), encoding="utf-8"))
     items = [it for g in groups for it in g["items"] if it.get("src", "yahoo") == "yahoo"]
@@ -147,6 +187,11 @@ def main():
     data = {iv: download(want, iv) for iv in INTERVALS}
     print("Prenešeno:", {iv: len(d) for iv, d in data.items()}, "od", len(want))
 
+    try:
+        ext = extended([t for t in want if US_RE.match(t)])
+        print("Pre/post:", {k: (v["s"], v["p"]) for k, v in ext.items()})
+    except Exception as e:  # noqa
+        print("  ! pre/post napaka:", e); ext = {}
     meta = {"updated": int(time.time() * 1000), "symbols": {}}
     for it in items:
         sid, info = it["id"], {"ok": False}
@@ -173,6 +218,8 @@ def main():
             info = {"ok": True, "yahoo": used, "last": rnd(last), "prev": rnd(prev),
                     "chg": rnd((last / prev - 1) * 100) if prev else None,
                     "lastBar": int(pd.Timestamp(latest.index[-1]).timestamp() * 1000)}
+            if used in ext:
+                info["ext"] = ext[used]
             print(f"  + {sid:8} {used:10} {info['last']} ({info['chg']}%)")
         else:
             print(f"  - {sid:8} ni podatkov (kandidati: {it.get('y') or it.get('ratio') or 'brez'})")
