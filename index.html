@@ -1197,7 +1197,7 @@ reg({ name:'ivCone', totalStep:2, needDefaultPointFigure:false,
       figs.push({type:'line', attrs:{coordinates:c}, styles:{color:col, size:dash?1:1.5, style:dash?'dashed':'solid', dashedValue:[4,4]}, ignoreEvent:true});
     d.nodes.forEach((n,i)=>{ if (!n.lab) return; const a=u1[i+1], b=l1[i+1];
       figs.push({type:'line', attrs:{coordinates:[{x:a.x,y:u2[i+1].y},{x:a.x,y:l2[i+1].y}]}, styles:{color:'rgba(255,152,0,0.5)', size:1, style:'dashed', dashedValue:[2,3]}, ignoreEvent:true});
-      figs.push({type:'text', attrs:{x:a.x, y:u2[i+1].y-4, text:n.lab+' ±'+n.pct.toFixed(1)+'%', align:'center', baseline:'bottom'}, styles:{...lbl('#ff9800'), color:'#000', size:10}, ignoreEvent:true});
+      figs.push({type:'text', attrs:{x:a.x, y:u2[i+1].y-4, text:n.lab+' 1σ ±'+n.pct.toFixed(1)+'%', align:'center', baseline:'bottom'}, styles:{...lbl('#ff9800'), color:'#000', size:10}, ignoreEvent:true});
       figs.push({type:'text', attrs:{x:a.x, y:a.y-2, text:kfmt(n.u1), align:'center', baseline:'bottom'}, styles:{color:'#82a6ff', size:10, backgroundColor:'transparent'}, ignoreEvent:true});
       figs.push({type:'text', attrs:{x:b.x, y:b.y+2, text:kfmt(n.l1), align:'center', baseline:'top'}, styles:{color:'#82a6ff', size:10, backgroundColor:'transparent'}, ignoreEvent:true}) });
     return figs;
