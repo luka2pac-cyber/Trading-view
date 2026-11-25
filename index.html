@@ -113,6 +113,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #optCard td{padding:0 8px 0 0;white-space:nowrap}
 #app.optmode #optBtn{background:#2962ff;color:#fff}
 @media(max-width:900px){#optCard{top:6px;left:6px;font-size:11px;max-width:calc(100% - 70px);padding:6px 8px}}
+@media(max-width:390px){#chg{display:none}#symBtn{font-size:19px!important}}
 #tpad{position:absolute;inset:0;z-index:24;touch-action:none}
 #tpad .tpx{position:absolute;left:0;right:0;height:0;border-top:1px dashed #9598a1}
 #tpad .tpy{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed #9598a1}
@@ -137,8 +138,10 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   #top{grid-column:1/-1;border-bottom:1px solid var(--line);gap:0}
   #top .vs,#tfFav,#tfMore,#redoBtn,#setBtn,#alertBtn,#fsBtn,#snap,#wlBtnM,#indBtn span,#optBtn{display:none!important}
   #symBtn{min-width:0;padding:8px 12px;background:transparent;font-size:21.5px}
-  #top button{padding:8px 11px}
-  #top svg.i{width:27px;height:27px}
+  #top button{padding:6px 7px}
+  #top svg.i{width:26px;height:26px}
+  #top #undoBtn{display:none!important}
+  #symBtn{padding:6px 8px!important}
   #mTf{font-size:18px}
   #mMore{font-size:27px!important}
   #symBtn svg{display:none}
