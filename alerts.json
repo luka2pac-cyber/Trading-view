@@ -3,16 +3,6 @@
  "tg_offset": 926652564,
  "alerts": [
   {
-   "id": "7M4O8V",
-   "sym": "BTCUSD",
-   "price": 75227,
-   "op": "above",
-   "note": "",
-   "status": "active",
-   "created": 1795628970407,
-   "ref": 59476.13
-  },
-  {
    "id": "TEST1",
    "sym": "BTCUSD",
    "price": 1000,
