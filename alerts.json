@@ -15,12 +15,12 @@
   {
    "id": "CGO9XM",
    "sym": "BTCUSD",
-   "price": 82592,
+   "price": 79577,
    "op": "above",
    "note": "",
    "status": "active",
-   "created": 1795628967711,
-   "ref": 59476.13
+   "created": 1795629246623,
+   "ref": 59499.02
   },
   {
    "id": "TEST1",
