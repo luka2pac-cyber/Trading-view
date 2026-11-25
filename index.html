@@ -597,7 +597,7 @@ klinecharts.registerIndicator({
   figures: LMA_LINES.map(([key,title,color,size])=>({key, title:title+': ', type:'line', styles:()=>({color, size, style:'solid'})})),
   calc: list => { const c=list.map(k=>k.close);
     const e10=emaArr(c,10), e50=emaArr(c,50), e200=emaArr(c,200), e21=emaArr(c,21), s7=smaArr(c,7), s200=smaArr(c,200), bm=smaArr(c,20), sd=stdArr(c,20,bm);
-    return list.map((k,i)=>({ema10:e10[i], ema50:e50[i], ema200:e200[i], ema21:e21[i], sma7:s7[i], sma200:s200[i], bbm:bm[i], bbu:bm[i]==null?null:bm[i]+2*sd[i], bbl:bm[i]==null?null:bm[i]-2*sd[i]})) },
+    return list.map((k,i)=>({ema10:e10[i], ema50:e50[i], ema200:e200[i], ema21:e21[i], sma7:s7[i], sma200:s200[i], bbm:bm[i], bbu:bm[i]==null?null:bm[i]+2*sd[i], bbl:bm[i]==null||bm[i]-2*sd[i]<=0?null:bm[i]-2*sd[i]})) },
   createTooltipDataSource: ({chart, indicator, crosshair}) => { const r=indicator.result||[]; const d=r[tipIdx(chart,crosshair,r.length)]||{}; const p=(chart.getSymbol()||{}).pricePrecision??2;
     return legend('MA', '', indicator.visible===false ? [] : LMA_LINES.map(([k,t,c])=>[t, d[k]==null?'—':fmt(d[k],p), c]), [eyeFeat(indicator.visible!==false)]) }
 });
