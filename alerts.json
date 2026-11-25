@@ -25,12 +25,12 @@
   {
    "id": "S55HLZ",
    "sym": "BTCUSD",
-   "price": 68557,
+   "price": 65820,
    "op": "above",
    "note": "",
    "status": "active",
-   "created": 1795639750373,
-   "ref": 60021.63
+   "created": 1795639761846,
+   "ref": 60002.17
   }
  ],
  "bot": "luka_charts_alarm_bot"
