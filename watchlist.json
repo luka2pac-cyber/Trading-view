@@ -3,17 +3,17 @@
   "group": "Glavno",
   "items": [
    {
+    "id": "BTC-PERP",
+    "src": "deribit",
+    "inst": "BTC-PERPETUAL",
+    "name": "BTC perp (Deribit)"
+   },
+   {
     "id": "BTCUSD",
     "src": "bitstamp",
     "pair": "btcusd",
     "pp": 0,
     "name": "BTC/USD (Bitstamp)"
-   },
-   {
-    "id": "BTC-PERP",
-    "src": "deribit",
-    "inst": "BTC-PERPETUAL",
-    "name": "BTC perp (Deribit)"
    },
    {
     "id": "SPY",
