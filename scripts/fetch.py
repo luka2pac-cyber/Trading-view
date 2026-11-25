@@ -68,6 +68,77 @@ def ratio(a, b):
     return r
 
 
+
+# ---------- Ljubljanska borza (ljse.si) ----------
+import datetime as _dt
+import requests as _rq
+
+_UA = {"User-Agent": "Mozilla/5.0 (luka-charts robot)", "X-Requested-With": "XMLHttpRequest"}
+
+
+def _num(v):
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    return float(str(v).replace(".", "").replace(",", "."))
+
+
+def ljse_fetch(it):
+    isin, kind = it["isin"], it.get("kind", "stock")
+    to = _dt.date.today()
+    frm = to - _dt.timedelta(days=5 * 365 - 5)   # borza vrne največ ~5 let
+    if kind == "index":
+        url = f"https://ljse.si/json/indexHistory/{isin}/{frm}/{to}/si"
+    else:
+        url = f"https://ljse.si/json/securityHistory/{isin}/{frm}/{to}/si?trading_model_id=ALL"
+    j = _rq.get(url, headers=_UA, timeout=30).json()
+    if j.get("error"):
+        raise RuntimeError(j["error"])
+    bars = {}
+    for r in j.get("rows", []):
+        d = r.get("date_yyyy_MM_dd") or _dt.datetime.strptime(r["date"], "%d.%m.%Y").strftime("%Y-%m-%d")
+        if kind == "index":
+            o, h, l, c, v = (_num(r.get(k)) for k in ("open_value", "high_value", "low_value", "last_value", "turnover"))
+        else:
+            if d in bars and r.get("trading_model_id") != "CT":
+                continue
+            o, h, l, c, v = (r.get(k) for k in ("open_price_n", "high_price_n", "low_price_n", "last_price_n", "volume_n"))
+        if c is None:
+            continue
+        o = o if o is not None else c
+        bars[d] = (o, h if h is not None else max(o, c), l if l is not None else min(o, c), c, v or 0)
+    # današnja (še nezaključena) sveča iz današnjih poslov
+    today = to.strftime("%Y-%m-%d")
+    try:
+        probe = isin if kind != "index" else it.get("probe_isin", "SI0031102120")
+        pj = _rq.get(f"https://ljse.si/si/papir/310?isin={probe}&range=1m", headers=_UA, timeout=30).json()
+        if kind == "index":
+            dates, vals = pj["moves"]["date"], pj["moves"]["index"]
+            if dates and dates[-1][:10] == today and today not in bars and vals[-1]:
+                c = float(vals[-1])
+                prev = list(bars.values())[-1][3] if bars else c
+                bars[today] = (prev, max(prev, c), min(prev, c), c, 0)
+        else:
+            rows = (pj.get("Trades") or {}).get("rows") or []
+            if rows and today not in bars:
+                px = [_num(r["price"]) for r in sorted(rows, key=lambda r: int(r["seqno"]))]
+                qty = sum(_num(r["quantity"]) for r in rows)
+                bars[today] = (px[0], max(px), min(px), px[-1], qty)
+    except Exception as e:  # noqa
+        print(f"  ! {it['id']} današnji posli: {e}")
+    keys = sorted(bars)
+    tz = _dt.timezone.utc
+    out = {"t": [], "o": [], "h": [], "l": [], "c": [], "v": []}
+    for d in keys:
+        o, h, l, c, v = bars[d]
+        out["t"].append(int(_dt.datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=tz).timestamp() * 1000))
+        for k, x in zip("ohlc", (o, h, l, c)):
+            out[k].append(rnd(x))
+        out["v"].append(int(v or 0))
+    return out
+
+
 def main():
     groups = json.load(open(os.path.join(ROOT, "watchlist.json"), encoding="utf-8"))
     items = [it for g in groups for it in g["items"] if it.get("src", "yahoo") == "yahoo"]
@@ -106,6 +177,25 @@ def main():
         else:
             print(f"  - {sid:8} ni podatkov (kandidati: {it.get('y') or it.get('ratio') or 'brez'})")
         meta["symbols"][sid] = info
+    for g in groups:
+        for it in g["items"]:
+            if it.get("src") != "ljse":
+                continue
+            sid = it["id"]
+            try:
+                d = ljse_fetch(it)
+                if not d["t"]:
+                    raise RuntimeError("ni vrstic")
+                json.dump(d, open(os.path.join(OUT, f"{fname(sid)}_1d.json"), "w"), separators=(",", ":"))
+                c = d["c"]
+                meta["symbols"][sid] = {"ok": True, "yahoo": "LJSE " + it.get("isin", ""), "source": "Ljubljanska borza",
+                                        "last": c[-1], "prev": c[-2] if len(c) > 1 else c[-1],
+                                        "chg": rnd((c[-1] / c[-2] - 1) * 100) if len(c) > 1 and c[-2] else None,
+                                        "lastBar": d["t"][-1]}
+                print(f"  + {sid:8} LJSE       {c[-1]} ({meta['symbols'][sid]['chg']}%) {len(c)} dni")
+            except Exception as e:  # noqa
+                meta["symbols"][sid] = {"ok": False}
+                print(f"  - {sid:8} LJSE napaka: {e}")
     json.dump(meta, open(os.path.join(OUT, "meta.json"), "w"), separators=(",", ":"))
     print("Brez podatkov:", [k for k, v in meta["symbols"].items() if not v["ok"]] or "nič")
 

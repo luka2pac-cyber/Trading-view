@@ -338,16 +338,22 @@
   "items": [
    {
     "id": "SBITOP",
-    "y": [
-     "^SBITOP",
-     "SBITOP.LJ"
-    ],
-    "name": "SBITOP indeks"
+    "src": "ljse",
+    "kind": "index",
+    "isin": "SI0026109882",
+    "name": "SBITOP indeks (LJSE)"
    },
    {
-    "id": "903246",
-    "y": [],
-    "name": "Krka (L&S, EUR) – ni vira, glej KRK"
+    "id": "KRKG",
+    "src": "ljse",
+    "isin": "SI0031102120",
+    "name": "Krka (LJSE, EUR)"
+   },
+   {
+    "id": "NLBR",
+    "src": "ljse",
+    "isin": "SI0021117344",
+    "name": "NLB (LJSE, EUR)"
    },
    {
     "id": "NLB",
@@ -359,17 +365,15 @@
    },
    {
     "id": "LKPG",
-    "y": [
-     "LKPG.LJ"
-    ],
-    "name": "Luka Koper"
+    "src": "ljse",
+    "isin": "SI0031101346",
+    "name": "Luka Koper (LJSE)"
    },
    {
     "id": "PETG",
-    "y": [
-     "PETG.LJ"
-    ],
-    "name": "Petrol"
+    "src": "ljse",
+    "isin": "SI0031102153",
+    "name": "Petrol (LJSE)"
    }
   ]
  },
