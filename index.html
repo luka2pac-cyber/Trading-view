@@ -107,6 +107,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #optCard .oh button{padding:2px 6px;font-size:14px}
 #optCard.min>*:not(.oh){display:none}
 #optCard .oh{cursor:pointer}
+#optCard .oh2{margin-top:6px;border-top:1px solid #2a2e39;padding-top:5px}
 #optCard .om{color:#9598a1;font-size:11px}
 #optCard table{border-collapse:collapse;margin:4px 0 2px;font-variant-numeric:tabular-nums}
 #optCard th{color:#9598a1;font-weight:400;text-align:left;padding:0 8px 0 0;font-size:11px}
@@ -1137,7 +1138,7 @@ $('#mTf').onclick = e => { const s=symOf(state.sym);
   h += '<div class="hd">Obdobje</div><div class="tgrid">'+RANGES.map(r=>'<div class="it" data-v="R:'+r[0]+'"><b>'+r[0]+'</b></div>').join('')+'</div>';
   openPop(e.currentTarget, h, v=>{ if (v.startsWith('R:')){ const b=document.querySelector('#ranges [data-r="'+v.slice(2)+'"]'); if (b) b.click() } else { state.tf=v; load() } }) };
 function moreMenu(anchor){
-  const h = item('search','Iskanje simbola',SV('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>'))+item('alarms','Alarmi (Telegram)',SV('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/>'))+
+  const h = item('search','Iskanje simbola',SV('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>'))+item('alarms','Alarmi (Telegram)',SV('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/>'))+item('drb','Deribit pozicije (ključ samo za branje)',SV('<path d="M4 7h16v12H4z"/><path d="M9 7V5h6v2"/>'))+
     item('ind','Indikatorji',SV('<path d="M3 17l5-6 4 4 8-9"/>'))+
     item('ct','Vrsta grafa',CTS.find(c=>c[0]===state.ct)[2])+'<hr>'+
     item('log','Logaritemska lestvica','',state.axis==='log')+item('pct','Odstotna lestvica','',state.axis==='pct')+item('lin','Navadna lestvica','',state.axis==='normal')+
@@ -1145,7 +1146,7 @@ function moreMenu(anchor){
     item('cross','Kazalec: križ',ICON.cross,state.cursor==='cross')+item('dot','Kazalec: pika',ICON.dot,state.cursor==='dot')+'<hr>'+
     item('tz','Časovni pas: '+(state.tz==='UTC'?'UTC':'Ljubljana'),'')+item('set','Nastavitve grafa','')+item('snap','Posnetek grafa','')+item('fs','Celozaslonski način','')+'<hr><div class="hd" style="text-transform:none">Verzija '+esc(BUILD.slice(0,7))+' · zaslon '+innerWidth+' px</div>';
   openPop(anchor, h, v=>{
-    if (v==='search') symbolSearch(); if (v==='alarms') alertDialog(); if (v==='ind') indDialog(); if (v==='ct') $('#ctBtn').click();
+    if (v==='search') symbolSearch(); if (v==='alarms') alertDialog(); if (v==='drb') posDialog(); if (v==='ind') indDialog(); if (v==='ct') $('#ctBtn').click();
     if (v==='log') setAxis('log'); if (v==='pct') setAxis('pct'); if (v==='lin') setAxis('normal'); if (v==='reset') resetView(true);
     if (v==='cross'||v==='dot') setCursor(v);
     if (v==='tz'){ state.tz = state.tz==='UTC'?'Europe/Ljubljana':'UTC'; chart.setTimezone(state.tz); LS.set('tz',state.tz); tick() }
@@ -1260,7 +1261,10 @@ function optDraw(){
   chart.createOverlay({name:'ivCone', groupId:'opt', lock:true, points:[{timestamp:last.timestamp, value:S},{timestamp:last.timestamp, value:S}], extendData:{t0:last.timestamp, S, nodes}});
   optCard(fr, labs);
 }
+let OPT_CARD_ARGS=null;
+function optCardRefresh(){ if (OPT.on && OPT_CARD_ARGS) optCard(...OPT_CARD_ARGS) }
 function optCard(fr, labs){
+  OPT_CARD_ARGS=[fr, labs];
   let c=$('#optCard'); if (!c){ c=document.createElement('div'); c.id='optCard'; $('#chart').appendChild(c) }
   const st=OPT.dvStats, S=OPT.S;
   const rvNow = (()=>{ const r=rvFor(chart.getDataList()); return r[r.length-1] })();
@@ -1272,25 +1276,85 @@ function optCard(fr, labs){
     (st ? '<div>DVOL <b>'+st.cur.toFixed(1)+'</b> · IV je '+lvl+'</div><div class="om">IV rank '+rank.toFixed(0)+'% · percentil '+st.pct.toFixed(0)+'% (1 leto: '+st.min.toFixed(0)+'–'+st.max.toFixed(0)+')</div>' : '')+
     (rvNow!=null ? '<div>RV30 <b>'+rvNow.toFixed(1)+'</b> · premija IV−RV <b style="color:'+(prem>=0?'#089981':'#f23645')+'">'+(prem>=0?'+':'')+prem.toFixed(1)+'</b></div>' : '')+
     '<table><tr><th>Expiry</th><th></th><th>ATM IV</th><th>±1σ (68%)</th></tr>'+rows+'</table>'+
-    '<div class="om">Modro polje = ±1σ, črtkano = ±2σ (95%) · Deribit mark IV</div>';
+    '<div class="om">Modro polje = ±1σ, črtkano = ±2σ (95%) · Deribit mark IV</div>'+posHtml();
+  const ps=c.querySelector('#posSet'); if (ps) ps.onclick=e=>{ e.preventDefault(); e.stopPropagation(); posDialog() };
   c.querySelector('.oh').onclick=()=>{ c.classList.toggle('min'); LS.set('optMin', c.classList.contains('min')) };
   c.classList.toggle('min', !!LS.get('optMin', isM()));
 }
-async function optRefresh(){ try { await optData(); optDraw(); if (OPT.on){ chart.removeIndicator({name:'IVRV', paneId:'pane_IVRV'}); chart.createIndicator({name:'IVRV', paneId:'pane_IVRV'}, false, {height: isM()?120:150}) } } catch(e){ toast('Opcije: '+(e.message||e)) } }
+async function optRefresh(){ try { await Promise.all([optData(), posFetch()]); optDraw(); posDraw(); if (OPT.on){ chart.removeIndicator({name:'IVRV', paneId:'pane_IVRV'}); chart.createIndicator({name:'IVRV', paneId:'pane_IVRV'}, false, {height: isM()?120:150}) } } catch(e){ toast('Opcije: '+(e.message||e)) } }
 function optFit(){
   const L=chart.getDataList(); if (L.length<3) return; const per=L[L.length-1].timestamp-L[L.length-2].timestamp;
   const sz=chart.getSize('candle_pane','main'), W=(sz&&sz.width)||600, bs=chart.getBarSpace().bar;
   chart.setOffsetRightDistance(Math.min(W*0.45, 35*864e5/per*bs)+10);
 }
 function optOn(){
-  if (!OPT.on){ OPT.on=true; OPT.timer=setInterval(optRefresh, 5*60*1000) }
+  if (!OPT.on){ OPT.on=true; OPT.timer=setInterval(optRefresh, 5*60*1000); OPT.ptimer=setInterval(async()=>{ if (!drbKey()) return; await posFetch(); posDraw(); optCardRefresh() }, 60*1000) }
   optRefresh().then(optFit);
 }
 function optOff(){
-  if (!OPT.on) return; OPT.on=false; clearInterval(OPT.timer);
-  chart.removeOverlay({groupId:'opt'}); chart.removeIndicator({name:'IVRV', paneId:'pane_IVRV'}); chart.removeIndicator({name:'OPTRNG', paneId:'candle_pane'});
+  if (!OPT.on) return; OPT.on=false; clearInterval(OPT.timer); clearInterval(OPT.ptimer);
+  chart.removeOverlay({groupId:'opt'}); chart.removeOverlay({groupId:'pos'}); chart.removeIndicator({name:'IVRV', paneId:'pane_IVRV'}); chart.removeIndicator({name:'OPTRNG', paneId:'candle_pane'});
   const c=$('#optCard'); if (c) c.remove();
 }
+/* ---------- moje Deribit pozicije (ključ samo za branje, shranjen samo v tem brskalniku) ---------- */
+const POS = {list:[], err:null, t:0};
+const drbKey = () => LS.get('drbKey', null);
+async function posFetch(){
+  const k=drbKey(); if (!k) { POS.list=[]; return }
+  try {
+    const a = await rpc('public/auth',{grant_type:'client_credentials', client_id:k.id, client_secret:k.secret});
+    const r = await rpc('private/get_positions',{currency:'BTC', kind:'option', access_token:a.access_token});
+    POS.list = (r||[]).filter(x=>x.size && Math.abs(x.size)>1e-9).map(x=>{ const p=x.instrument_name.split('-');
+      return {...x, exp:expTs(p[1]), code:p[1], K:+p[2], cp:p[3]} }).sort((a,b)=>a.exp-b.exp||a.K-b.K);
+    POS.err=null; POS.t=Date.now();
+  } catch(e){ POS.err = (e && (e.message||e.code)) || 'napaka'; }
+}
+reg({ name:'posLines', totalStep:2, needDefaultPointFigure:false,
+  createPointFigures: ({chart, overlay}) => {
+    const d=overlay.extendData; if (!d || !d.list) return []; const figs=[];
+    const P=(t,v)=>{ const r=chart.convertToPixel([{timestamp:t,value:v}],{paneId:'candle_pane'}); return Array.isArray(r)?r[0]:r };
+    for (const x of d.list){ const a=P(d.t0,x.K), b=P(x.exp,x.K), col = x.cp==='P' ? '#f23645' : '#089981';
+      figs.push({type:'line', attrs:{coordinates:[a,b]}, styles:{color:col, size:2, style:'solid'}, ignoreEvent:true});
+      if (x.be!=null){ const c=P(d.t0,x.be), e=P(x.exp,x.be); figs.push({type:'line', attrs:{coordinates:[c,e]}, styles:{color:col, size:1, style:'dashed', dashedValue:[3,3]}, ignoreEvent:true});
+        figs.push({type:'text', attrs:{x:e.x+3, y:e.y, text:'BE '+kfmt(x.be), align:'left', baseline:'middle'}, styles:{color:col, size:10, backgroundColor:'transparent'}, ignoreEvent:true}) }
+      figs.push({type:'text', attrs:{x:b.x+3, y:b.y, text:(x.size<0?'S ':'L ')+x.cp+' '+kfmt(x.K)+' ×'+Math.abs(x.size), align:'left', baseline:'middle'}, styles:{...lbl(col), size:10}, ignoreEvent:true}) }
+    return figs;
+  }
+});
+function posDraw(){
+  chart.removeOverlay({groupId:'pos'}); const L=chart.getDataList(); if (!L.length || !POS.list.length) return;
+  const last=L[L.length-1];
+  const list=POS.list.map(x=>({exp:x.exp, K:x.K, cp:x.cp, size:x.size, be: x.average_price_usd!=null ? (x.cp==='P' ? x.K-x.average_price_usd : x.K+x.average_price_usd) : null}));
+  chart.createOverlay({name:'posLines', groupId:'pos', lock:true, points:[{timestamp:last.timestamp, value:last.close},{timestamp:last.timestamp, value:last.close}], extendData:{t0:last.timestamp, list}});
+}
+function posHtml(){
+  if (!drbKey()) return '<div class="om" style="margin-top:4px">Moje pozicije: <a href="#" id="posSet" style="color:#82a6ff">poveži Deribit (samo branje)</a></div>';
+  if (POS.err) return '<div class="om" style="margin-top:4px;color:#f23645">Deribit: '+esc(POS.err)+' · <a href="#" id="posSet" style="color:#82a6ff">ključ</a></div>';
+  if (!POS.list.length) return '<div class="om" style="margin-top:4px">Ni odprtih opcij.</div>';
+  const S=OPT.S||0; let D=0,G=0,T=0,V=0, pl=0;
+  const rows=POS.list.map(x=>{ D+=x.delta||0; G+=x.gamma||0; T+=x.theta||0; V+=x.vega||0; pl+=x.floating_profit_loss_usd||0; const d=new Date(x.exp);
+    const mk=x.mark_price*x.index_price;
+    return '<tr><td style="color:'+(x.cp==='P'?'#f23645':'#089981')+'">'+(x.size<0?'S ':'L ')+x.cp+' '+kfmt(x.K)+'</td><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.</td><td>'+Math.abs(x.size)+'</td><td>$'+fmt(x.average_price_usd,0)+'→'+fmt(mk,0)+'</td><td style="color:'+((x.floating_profit_loss_usd||0)>=0?'#089981':'#f23645')+'">'+fmt(x.floating_profit_loss_usd,0)+'</td></tr>' }).join('');
+  return '<div class="oh2"><b>Moje pozicije</b> <span class="om">(Deribit, samo branje)</span></div><table><tr><th>Opcija</th><th>Exp</th><th>Kol.</th><th>Prem. $ → zdaj</th><th>P&L $</th></tr>'+rows+'</table>'+
+    '<div>Δ <b>'+D.toFixed(3)+'</b> · Γ <b>'+G.toFixed(5)+'</b> · Θ <b>'+T.toFixed(1)+'</b> · ν <b>'+V.toFixed(1)+'</b> · P&L <b style="color:'+(pl>=0?'#089981':'#f23645')+'">$'+fmt(pl,0)+'</b></div>'+
+    '<div class="om">Polna črta = strike do expiryja, črtkana = break-even. Greeks kot jih vrne Deribit (vsota).</div>';
+}
+function posDialog(){
+  const k=drbKey();
+  openModal('<header>Deribit pozicije<button data-x>✕</button></header><div style="padding:14px 16px;display:grid;gap:10px;line-height:1.5">'+
+    '<div><b>Enkratna nastavitev (samo branje):</b><br>1. Deribit: zgoraj desno Account → <b>API</b> → <b>Add new key</b> (Deribit-generated)<br>2. Scopes: <b>Trade = read</b>. Nič s "write" in nič Wallet.<br>3. Name: <b>luka-charts</b> → shrani<br>4. <b>Client Secret se pokaže samo enkrat</b> – takoj kopiraj Client ID in Client Secret in ju prilepi sem.</div>'+
+    '<div class="om">Ključ ostane samo v tem brskalniku/telefonu. Z njim ni mogoče trgovati ali dvigovati.</div>'+
+    '<input type="text" id="dkId" placeholder="Client ID" autocomplete="off" spellcheck="false" value="'+esc(k?k.id:'')+'">'+
+    '<input type="text" id="dkSec" placeholder="Client Secret" autocomplete="off" spellcheck="false">'+
+    '<button id="dkSave" style="background:#2962ff;color:#fff;justify-self:start">Shrani in preveri</button>'+
+    (k?'<a href="#" id="dkOut" style="color:#f23645">Odklopi in izbriši ključ</a>':'')+'</div>');
+  $('#dkSave').onclick=async()=>{ const id=$('#dkId').value.trim(), sec=$('#dkSec').value.trim(); if (!id||!sec) return toast('Vpiši oba');
+    LS.set('drbKey',{id,secret:sec}); await posFetch();
+    if (POS.err){ LS.set('drbKey',null); toast('Ključ ne deluje: '+POS.err); return }
+    toast('✅ Povezano – pozicij: '+POS.list.length); closeModal(); if (OPT.on){ posDraw(); optCardRefresh() } };
+  const o=$('#dkOut'); if (o) o.onclick=e=>{ e.preventDefault(); LS.set('drbKey',null); POS.list=[]; chart.removeOverlay({groupId:'pos'}); closeModal(); optCardRefresh(); toast('Ključ izbrisan') };
+}
+
 /* ---------- tipkovnica ---------- */
 document.addEventListener('keydown', e => {
   if (e.target.matches('input,select,textarea')) { if (e.key==='Escape') closeModal(); return }
