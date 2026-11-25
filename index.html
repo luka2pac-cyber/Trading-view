@@ -142,7 +142,15 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   #top svg.i{width:26px;height:26px}
   #top #undoBtn{display:none!important}
   #symBtn{padding:6px 8px!important}
-  #mTf{font-size:18px}
+  #mTfQ{gap:0;align-items:center;order:1}
+  #mTfQ button{font-size:17px;font-weight:600;color:#9a9a9a;padding:6px 7px!important;border-radius:6px}
+  #mTfQ button.on{color:#fff;background:#2a2e39}
+  #mTf{font-size:15px;color:#9a9a9a;order:2;padding:6px 5px!important}
+  #symBtn{order:0}
+  #price{order:3}#chg{order:4}
+  #top .grow{order:5}
+  #mMore{order:6;padding:4px 6px!important}
+  #ctBtn,#indBtn{display:none!important}
   #mMore{font-size:27px!important}
   #symBtn svg{display:none}
   #price{font-size:17.5px}#chg{font-size:16px}
@@ -202,7 +210,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 <div id="app">
   <div id="top">
     <button id="symBtn" title="Iskanje simbola"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><span id="symName">—</span></button>
-    <span id="price">—</span><span id="chg"></span>
+    <div id="mTfQ" class="monly"></div><span id="price">—</span><span id="chg"></span>
     <div class="vs"></div>
     <div id="tfFav" style="display:flex"></div>
     <button id="tfMore" title="Interval" data-popbtn="1"><span class="caret">▼</span></button>
@@ -220,7 +228,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
     <button id="setBtn" title="Nastavitve"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
     <button id="fsBtn" title="Celozaslonski način"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
     <button id="snap" title="Posnetek grafa (PNG)"><svg class="i" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
-    <button id="mTf" class="monly" data-popbtn="1" title="Interval" style="font-weight:700">D</button>
+    <button id="mTf" class="monly" data-popbtn="1" title="Vsi intervali">▾</button>
     <button id="mMore" class="monly" data-popbtn="1" title="Več" style="font-size:20px;padding:4px 10px">⋯</button>
     <button id="wlBtnM" title="Watchlist" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></button>
   </div>
@@ -722,7 +730,9 @@ $('#symBtn').onclick = ()=>symbolSearch(); $('#wlSearch').onclick = ()=>symbolSe
 
 /* ---------- intervali ---------- */
 function renderTfs(){
-  $('#mTf').textContent = state.tf;
+  const q=$('#mTfQ'), sq=symOf(state.sym); q.innerHTML='';
+  const qk = ['4h','D','W'].includes(state.tf) ? ['4h','D','W'] : [state.tf,'4h','D','W'];
+  for (const k of qk){ const t=tfOf(k); if (!t || !allowedTf(sq,t)) continue; const b=document.createElement('button'); b.textContent=k==='D'?'D':k==='W'?'W':k; if (k===state.tf) b.className='on'; b.onclick=()=>{ state.tf=k; load() }; q.appendChild(b) }
   const box=$('#tfFav'); box.innerHTML=''; const s=symOf(state.sym);
   const favs = FAV.includes(state.tf) ? FAV : [...FAV, state.tf];
   for (const k of favs){ const t=tfOf(k); const b=document.createElement('button'); b.textContent=t.k; b.title=t.l;
@@ -865,7 +875,7 @@ const lineStyle = (c, size, dash) => ({line:{color:c,size:size||1.5,style:dash?'
 const myOverlays = () => chart.getOverlays({groupId:'d'});
 let drawingId = null;
 const evts = {
-  onDrawEnd: e=>{ drawingId=null; setTimeout(()=>{ saveDrawings(); hint(''); const n=e.overlay.name; if (state.stay) startTool(n); else { tool=null; renderLeft() } },0) },
+  onDrawEnd: e=>{ drawingId=null; if (e.overlay.name==='datePriceRange') measureAutoClear(); setTimeout(()=>{ saveDrawings(); hint(''); const n=e.overlay.name; if (state.stay) startTool(n); else { tool=null; renderLeft() } },0) },
   onPressedMoveStart: ()=>snapshot(),
   onPressedMoveEnd: ()=>setTimeout(()=>{ saveDrawings(); if (selectedId) showDtb(selectedId) },0),
   onSelected: e=>{ selectedId=e.overlay.id; showDtb(selectedId) },
@@ -881,6 +891,8 @@ function startTool(n){
   if (isM() && !TP_SKIP.has(n)){ tpStart(n, extra); return }
   drawingId = chart.createOverlay({name:n, groupId:'d', mode: state.magnet==='off'?'normal':state.magnet==='weak'?'weak_magnet':'strong_magnet', styles:lineStyle(state.color), ...extra, ...evts});
 }
+function clearMeasures(){ myOverlays().filter(o=>o.name==='datePriceRange' && o.id!==drawingId).forEach(o=>chart.removeOverlay({id:o.id})) }
+function measureAutoClear(){ setTimeout(()=>{ const h=e=>{ if (tool==='datePriceRange') return; document.removeEventListener('pointerdown',h,true); if (e.target.closest('#k')) clearMeasures() }; document.addEventListener('pointerdown',h,true) }, 50) }
 /* ---------- risanje na telefonu kot v TradingView: križec premikaš s prstom, tap = točka ---------- */
 const TP_SKIP = new Set(['brush']);
 let TP = null;
@@ -924,7 +936,7 @@ function tpTap(){
   if (TP.pts.length<TP.need){ tpRender(); tpHint(); return }
   const n=TP.name, pts=TP.pts, extra=TP.extra; if (TP.id) chart.removeOverlay({id:TP.id}); tpEnd();
   chart.createOverlay({name:n, groupId:'d', points:pts, styles:lineStyle(state.color), ...(extra||{}), ...evts});
-  drawingId=null; saveDrawings(); hint('');
+  drawingId=null; saveDrawings(); hint(''); if (n==='datePriceRange') measureAutoClear();
   if (state.stay) startTool(n); else { tool=null; renderLeft() }
 }
 function tpEnd(){ if (!TP) return; if (TP.id && drawingId===TP.id) drawingId=null; TP.el.remove(); TP=null }
@@ -934,13 +946,13 @@ function cancelTool(silent){
   tool=null; hint(''); if (!silent) renderLeft();
 }
 const drawKey = () => 'draw_'+(state.sym==='BTC-PERP'?'BTC-PERPETUAL':state.sym);
-const serialize = () => myOverlays().filter(o=>o.id!==drawingId && o.points && o.points.length && o.points.every(p=>p.timestamp!=null && p.value!=null))
+const serialize = () => myOverlays().filter(o=>o.id!==drawingId && o.name!=='datePriceRange' && o.points && o.points.length && o.points.every(p=>p.timestamp!=null && p.value!=null))
   .map(o=>({name:o.name, points:o.points.map(p=>({timestamp:p.timestamp,value:p.value})), styles:o.styles, lock:o.lock, extendData:o.extendData}));
 let undoStack=[], redoStack=[];
 function snapshot(){ undoStack.push(JSON.stringify(serialize())); if (undoStack.length>60) undoStack.shift(); redoStack=[] }
 function saveDrawings(){ LS.set(drawKey(), serialize()) }
 function restoreFrom(list){ chart.removeOverlay({groupId:'d'}); for (const d of list) chart.createOverlay({...d, groupId:'d', ...evts}); saveDrawings(); selectedId=null; closeDtb(); renderLeft() }
-function restoreDrawings(){ chart.removeOverlay({groupId:'d'}); for (const d of LS.get(drawKey(),[])) chart.createOverlay({...d, groupId:'d', ...evts}); renderLeft() }
+function restoreDrawings(){ chart.removeOverlay({groupId:'d'}); for (const d of LS.get(drawKey(),[]).filter(x=>x.name!=='datePriceRange')) chart.createOverlay({...d, groupId:'d', ...evts}); renderLeft() }
 function undo(){ cancelTool(true); if (!undoStack.length) return toast('Ni česa razveljaviti'); redoStack.push(JSON.stringify(serialize())); restoreFrom(JSON.parse(undoStack.pop())) }
 function redo(){ if (!redoStack.length) return toast('Ni česa uveljaviti'); undoStack.push(JSON.stringify(serialize())); restoreFrom(JSON.parse(redoStack.pop())) }
 $('#undoBtn').onclick=undo; $('#redoBtn').onclick=redo;
