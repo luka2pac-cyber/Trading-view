@@ -906,6 +906,7 @@ $('#k').addEventListener('pointerdown', e => { if (e.shiftKey && !tool && e.butt
 $('#k').addEventListener('contextmenu', e => {
   e.preventDefault();
   setTimeout(()=>{
+    if (alertCtx){ const id=alertCtx; alertCtx=null; openPopAt(e.clientX, e.clientY, item('del','Izbriši alarm',ICON.trash)+item('note','Opomba …',''), v=>{ selAlert=id; const b=dtb.querySelector('[data-al="'+v+'"]'); if (v==='del') delAlert(id); else { showAlertBar(id); dtb.querySelector('[data-al="note"]').click() } }); return }
     if (ovCtx){ ovCtx=null;
       openPopAt(e.clientX, e.clientY, item('del','Izbriši',ICON.trash,0,'Del')+item('lock','Zakleni / odkleni',ICON.lock)+item('clone','Kloniraj',ICON.clone), v=>dtbAction(v, dtb)); return }
     openPopAt(e.clientX, e.clientY,
@@ -1055,8 +1056,8 @@ function moreMenu(anchor){
 $('#mMore').onclick = e => moreMenu(e.currentTarget);
 $('#fab').onclick = e => {
   let h='';
-  const QUICK=[['datePriceRange','Merilo %'],['segment','Trend linija'],['horizontalStraightLine','Horizontalna'],['horizontalRayLine','Horiz. žarek'],['fibonacciLine','Fib'],['longPosition','Long'],['shortPosition','Short'],['rect','Pravokotnik']];
-  h+='<div class="hd">Najpogostejša</div><div class="tgrid">'+QUICK.map(([k,l])=>'<div class="it'+(tool===k?' on':'')+'" data-v="'+k+'">'+(k==='datePriceRange'?ICON.ruler:ICON[k])+'<span>'+l+'</span></div>').join('')+'</div>';
+  const QUICK=[['_alarm','Alarm'],['datePriceRange','Merilo %'],['segment','Trend linija'],['horizontalStraightLine','Horizontalna'],['horizontalRayLine','Horiz. žarek'],['fibonacciLine','Fib'],['longPosition','Long'],['shortPosition','Short'],['rect','Pravokotnik']];
+  h+='<div class="hd">Najpogostejša</div><div class="tgrid">'+QUICK.map(([k,l])=>'<div class="it'+(tool===k?' on':'')+'" data-v="'+k+'">'+(k==='_alarm'?SV('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/>'):k==='datePriceRange'?ICON.ruler:ICON[k])+'<span>'+l+'</span></div>').join('')+'</div>';
   const secs=[['Linije','lines'],['Fibonacci','fib'],['Napovedi in meritve','measure'],['Geometrijske oblike','shapes'],['Besedilo in oznake','text']];
   for (const [t,id] of secs){ const g=GROUPS.find(x=>x.id===id); h+='<div class="hd">'+t+'</div><div class="tgrid">'+g.items.map(i=>'<div class="it'+(tool===i[0]?' on':'')+'" data-v="'+i[0]+'">'+ICON[i[0]]+'<span>'+esc(i[1])+'</span></div>').join('')+'</div>' }
   const ov=myOverlays(), locked=ov.length>0&&ov.every(o=>o.lock), hidden=ov.length>0&&ov.every(o=>!o.visible);
@@ -1071,6 +1072,7 @@ $('#fab').onclick = e => {
     (tool?'<div class="it" data-v="_cancel">'+SV('<path d="M6 6l12 12M18 6L6 18"/>')+'<span>Prekliči</span></div>':'')+'</div>';
   openPop(e.currentTarget, h, v=>{
     if (!v.startsWith('_')){ const g=GROUPS.find(x=>x.items.some(i=>i[0]===v)); if (g){ groupSel[g.id]=v; LS.set('groupSel',groupSel) } startTool(v); return }
+    if (v==='_alarm'){ const c=curPrice(); if (c!=null) newAlert(state.sym, +c.toFixed(quote(symOf(state.sym)).pp)); return }
     if (v==='_mag'){ state.magnet = state.magnet==='off' ? 'strong' : 'off'; LS.set('magnet2',state.magnet); toast(state.magnet==='off'?'Magnet izklopljen':'Magnet vklopljen') }
     if (v==='_stay'){ state.stay=!state.stay; LS.set('stay',state.stay); toast(state.stay?'Ostanem v načinu risanja':'Po risbi nazaj na kazalec') }
     if (v==='_lock'){ const o=myOverlays(); const l=!(o.length&&o.every(x=>x.lock)); o.forEach(x=>chart.overrideOverlay({id:x.id,lock:l})); saveDrawings(); toast(l?'Risbe zaklenjene':'Risbe odklenjene') }
@@ -1093,6 +1095,7 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey||e.metaKey) && k==='z'){ e.preventDefault(); e.shiftKey?redo():undo(); return }
   if ((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); redo(); return }
   if (e.altKey && k==='r'){ e.preventDefault(); resetView(); return }
+  if (e.altKey && k==='a'){ e.preventDefault(); const c=curPrice(); if (c!=null) newAlert(state.sym, +c.toFixed(quote(symOf(state.sym)).pp)); return }
   if (e.altKey && k==='t'){ e.preventDefault(); startTool('segment'); return }
   if (e.altKey && k==='h'){ e.preventDefault(); startTool('horizontalStraightLine'); return }
   if (e.altKey && k==='f'){ e.preventDefault(); startTool('fibonacciLine'); return }
@@ -1103,52 +1106,104 @@ document.addEventListener('keydown', e => {
 });
 
 
-/* ---------- alarmi (Telegram bot + GitHub robot) ---------- */
-let ALERTS = {bot:null, connected:false, alerts:[]};
+/* ---------- alarmi: vlečljive črte na grafu (kot v TV), shranjene v repozitorij; obvestila prek Telegrama ---------- */
+const GH_REPO = 'luka2pac-cyber/Trading-view';
+let ALERTS = {bot:null, connected:false, alerts:[]}, ghSha = null, ghState = null;
+const ghTok = () => LS.get('ghToken', '');
 const b64u = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-const pendingA = () => LS.get('pendingAlerts', []).filter(p => Date.now()-p.t < 3600e3);
-async function loadAlerts(){ try { const r=await fetch('data/alerts.json?t='+Date.now(),{cache:'no-store'}); if (r.ok){ ALERTS=await r.json();
-  LS.set('pendingAlerts', pendingA().filter(p=>!ALERTS.alerts.some(a=>a.sym===p.sym && Math.abs(a.price-p.price)<1e-9))) } } catch(e){} drawAlerts() }
+const b64dec = b => decodeURIComponent(escape(atob(b.replace(/\s/g,''))));
+const b64enc = s => btoa(unescape(encodeURIComponent(s)));
+async function ghGet(){
+  const r = await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/alerts.json?t='+Date.now(), {headers:{Authorization:'Bearer '+ghTok(), Accept:'application/vnd.github+json'}, cache:'no-store'});
+  if (!r.ok) throw {message:'GitHub '+r.status}; const j=await r.json(); ghSha=j.sha; ghState=JSON.parse(b64dec(j.content)); return ghState;
+}
+async function ghSave(mutate, msg){
+  for (let i=0;i<3;i++){
+    const st = await ghGet(); mutate(st);
+    const r = await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/alerts.json', {method:'PUT', headers:{Authorization:'Bearer '+ghTok(), Accept:'application/vnd.github+json'},
+      body: JSON.stringify({message: msg||'alarm iz aplikacije', content: b64enc(JSON.stringify(st, null, 1)), sha: ghSha})});
+    if (r.ok){ ghState = st; ghSha = (await r.json()).content.sha; applyState(st); return true }
+    if (r.status!==409 && r.status!==422) throw {message:'GitHub '+r.status};
+  }
+  throw {message:'GitHub: konflikt, poskusi znova'};
+}
+function applyState(st){ ALERTS = {bot: st.bot || ALERTS.bot, connected: !!st.chat_id || ALERTS.connected, alerts: st.alerts||[]}; drawAlerts() }
+async function loadAlerts(){
+  try { const r=await fetch('data/alerts.json?t='+Date.now(),{cache:'no-store'}); if (r.ok){ const p=await r.json(); ALERTS.bot=p.bot; ALERTS.connected=p.connected; if (!ghTok()) ALERTS.alerts=p.alerts||[] } } catch(e){}
+  if (ghTok()){ try { applyState(await ghGet()) } catch(e){ toast('Alarmi: '+(e.message||e)) } } else drawAlerts();
+}
+const aid = () => Math.random().toString(36).slice(2,8).toUpperCase();
+const curPrice = () => { const l=chart.getDataList(); return l.length ? l[l.length-1].close : null };
 function drawAlerts(){
   try { chart.removeOverlay({groupId:'alerts'}) } catch(e){}
-  const list=[...ALERTS.alerts.filter(a=>a.status==='active').map(a=>({sym:a.sym, price:a.price, note:a.note})), ...pendingA().map(p=>({sym:p.sym, price:p.price, note:'čaka na robota'}))];
   const last = chart.getDataList().slice(-1)[0]; if (!last) return;
-  for (const a of list){ if (a.sym!==state.sym) continue;
-    chart.createOverlay({name:'horizontalStraightLine', groupId:'alerts', lock:true, points:[{timestamp:last.timestamp, value:a.price}],
-      styles:{line:{color:'#ff9800',size:1,style:'dashed',dashedValue:[4,4]}, point:{color:'transparent',borderColor:'transparent',activeColor:'transparent',activeBorderColor:'transparent'}}}) }
+  for (const a of ALERTS.alerts){ if (a.status!=='active' || a.sym!==state.sym) continue;
+    chart.createOverlay({name:'alertLine', groupId:'alerts', lock: !ghTok(), points:[{timestamp:last.timestamp, value:a.price}], extendData:{id:a.id, note:a.note||''},
+      onPressedMoveEnd: e => { const p=e.overlay.points[0].value; moveAlert(e.overlay.extendData.id, p) },
+      onRightClick: e => { alertCtx = e.overlay.extendData.id; return true },
+      onSelected: e => { selAlert = e.overlay.extendData.id; showAlertBar(e.overlay.extendData.id) },
+      onDeselected: () => { setTimeout(()=>{ if (!dtbBusy){ selAlert=null; closeDtb() } },0) } }) }
 }
-function tgLink(start){ return ALERTS.bot ? 'https://t.me/'+ALERTS.bot+'?start='+start : null }
-function newAlert(sym, price){
-  const link = tgLink('A_'+b64u(sym+'|'+price));
-  if (!link){ alertDialog(); return }
-  const pa=pendingA(); pa.push({sym, price, t:Date.now()}); LS.set('pendingAlerts', pa); drawAlerts();
-  window.open(link, '_blank') || (location.href = link);
-  toast('V Telegramu pritisni START – alarm bo aktiven v ~15 min');
+let alertCtx = null, selAlert = null;
+klinecharts.registerOverlay({ name:'alertLine', totalStep:2, needDefaultYAxisFigure:true,
+  createPointFigures: ({chart, coordinates, bounding, overlay}) => { const y=coordinates[0].y, p=overlay.points[0].value;
+    return [{type:'line', attrs:{coordinates:[{x:0,y},{x:bounding.width,y}]}, styles:{style:'dashed', color:'#ff9800', size:1, dashedValue:[5,4]}},
+      {type:'text', attrs:{x:bounding.width-6, y, text:'🔔 '+pfmt(chart,p)+(overlay.extendData&&overlay.extendData.note?'  '+overlay.extendData.note:''), align:'right', baseline:'bottom'}, styles:{...lbl('#ff9800'), color:'#000', size:11}, ignoreEvent:true}] },
+  createYAxisFigures: ({chart, coordinates, bounding, overlay}) => [{type:'text', attrs:{x:0, y:coordinates[0].y, text:pfmt(chart, overlay.points[0].value), align:'left', baseline:'middle'}, styles:{...lbl('#ff9800'), color:'#000'}}],
+  performEventPressedMove: ({points, performPoint}) => { points[0].value = performPoint.value }
+});
+function showAlertBar(id){
+  dtb.innerHTML = '<span style="padding:0 10px;color:#ff9800">🔔 alarm · povleci gor/dol</span><button data-al="note" title="Opomba">✎</button><button data-al="del" title="Izbriši alarm">'+ICON.trash+'</button>';
+  dtb.classList.add('open');
 }
+dtb.addEventListener('click', e => { const b=e.target.closest('[data-al]'); if (!b || !selAlert) return; const id=selAlert;
+  if (b.dataset.al==='del') delAlert(id);
+  if (b.dataset.al==='note'){ const a=ALERTS.alerts.find(x=>x.id===id); const t=prompt('Opomba alarma:', a&&a.note||''); if (t!==null) saveAlerts(st=>{ const x=st.alerts.find(z=>z.id===id); if (x) x.note=t }, 'opomba alarma') } }, true);
+function needGh(){ if (ghTok()) return false; alertDialog(); toast('Najprej enkrat poveži aplikacijo (navodila v oknu Alarmi)'); return true }
+async function saveAlerts(mut, msg){ try { await ghSave(mut, msg); return true } catch(e){ toast('Alarm ni shranjen: '+(e.message||e)); loadAlerts(); return false } }
+async function newAlert(sym, price){
+  if (needGh()) return;
+  const cur = sym===state.sym ? curPrice() : quote(symOf(sym)).last;
+  const a = {id:aid(), sym, price:+price, op: cur==null || price>=cur ? 'above':'below', note:'', status:'active', created:Date.now(), ref:cur};
+  ALERTS.alerts.push(a); drawAlerts();
+  if (await saveAlerts(st=>{ st.alerts=st.alerts||[]; st.alerts.push(a) }, 'nov alarm '+sym+' '+price)) toast('🔔 Alarm '+sym+' '+(a.op==='above'?'nad':'pod')+' '+price+' – obvestilo pride v Telegram');
+}
+async function moveAlert(id, price){
+  const q=quote(symOf(state.sym)); price=+(+price).toFixed(q.pp); const cur=curPrice();
+  await saveAlerts(st=>{ const a=st.alerts.find(x=>x.id===id); if (a){ a.price=price; a.op = cur==null||price>=cur?'above':'below'; a.created=Date.now(); a.ref=cur } }, 'premik alarma '+price);
+  toast('🔔 Alarm premaknjen na '+price);
+}
+async function delAlert(id){ ALERTS.alerts = ALERTS.alerts.filter(a=>a.id!==id); drawAlerts(); closeDtb(); selAlert=null;
+  if (await saveAlerts(st=>{ st.alerts=st.alerts.filter(a=>a.id!==id) }, 'izbris alarma')) toast('Alarm izbrisan') }
 function alertDialog(){
-  const s=symOf(state.sym), q=quote(s);
-  let h='<header>Alarmi<button data-x>✕</button></header>';
-  if (!ALERTS.bot){
-    h+='<div class="frm" style="grid-template-columns:1fr;line-height:1.5">Telegram bot še ni povezan.<br>1) V Telegramu odpri <b>@BotFather</b> → <code>/newbot</code> → dobiš <b>token</b>.<br>2) GitHub → repozitorij <b>Trading-view</b> → Settings → Secrets and variables → Actions → <b>New repository secret</b>: ime <code>TELEGRAM_TOKEN</code>, vrednost = token.<br>3) Svojemu botu pošlji <code>/start</code>. V ~15 min ti odgovori in alarmi delujejo.</div>';
+  const s=symOf(state.sym), q=quote(s); let h='<header>Alarmi<button data-x>✕</button></header>';
+  if (!ghTok()){
+    h+='<div class="frm" style="grid-template-columns:1fr;line-height:1.55"><b>Enkratna povezava aplikacije</b>'+
+      '<span>Da lahko alarme postavljaš in vlečeš direktno na grafu, aplikacija potrebuje ključ za zapis v tvoj repozitorij (ostane samo v tem brskalniku).</span>'+
+      '<span>1) Odpri <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" style="color:#2962ff">github.com/settings/personal-access-tokens/new</a><br>2) Ime: <i>Luka Charts</i>, Expiration: <i>No expiration</i> (ali 1 leto)<br>3) Repository access: <b>Only select repositories → Trading-view</b><br>4) Permissions → Repository → <b>Contents: Read and write</b><br>5) Generate token, kopiraj in prilepi spodaj.</span>'+
+      '<input type="text" id="ghT" placeholder="github_pat_…" autocomplete="off" spellcheck="false" style="width:100%"><button id="ghSave" style="background:#2962ff;color:#fff;justify-self:start">Shrani in preveri</button></div>';
   } else {
     h+='<div class="frm"><label for="aPrice">Nov alarm za <b>'+esc(s.id)+'</b> (zdaj '+fmt(q.last,q.pp)+')</label><span></span>'+
-       '<input type="text" id="aPrice" inputmode="decimal" value="'+esc(q.last!=null?(+q.last).toFixed(q.pp):'')+'" style="width:100%"><button id="aAdd" style="background:#2962ff;color:#fff">Nastavi v Telegramu</button></div>';
-    h+='<div class="sec">Aktivni</div><div class="body">';
-    const act=ALERTS.alerts.filter(a=>a.status==='active'), pend=pendingA();
-    if (!act.length && !pend.length) h+='<div class="li" style="cursor:default"><small>Ni aktivnih alarmov.</small></div>';
+       '<input type="text" id="aPrice" inputmode="decimal" value="'+esc(q.last!=null?(+q.last).toFixed(q.pp):'')+'" style="width:100%"><button id="aAdd" style="background:#2962ff;color:#fff">Dodaj</button></div>';
+    h+='<div class="sec" style="text-transform:none">Hitreje: desni klik na graf → "Dodaj alarm na tej ceni" (Alt+A = na trenutni ceni). Na telefonu: ✏️ → Alarm. Črto nato primeš in povlečeš gor/dol.</div><div class="body">';
+    const act=ALERTS.alerts.filter(a=>a.status==='active');
+    if (!act.length) h+='<div class="li" style="cursor:default"><small>Ni aktivnih alarmov.</small></div>';
     for (const a of act) h+='<div class="li" style="cursor:default"><div><b>'+esc(a.sym)+'</b> '+(a.op==='above'?'⬆️':'⬇️')+' '+esc(a.price)+(a.note?' <small>'+esc(a.note)+'</small>':'')+'</div><div class="act"><button data-go="'+esc(a.sym)+'">Graf</button><button data-del="'+esc(a.id)+'" title="Izbriši">✕</button></div></div>';
-    for (const p of pend) h+='<div class="li" style="cursor:default"><div><b>'+esc(p.sym)+'</b> '+esc(p.price)+' <small>čaka na robota (≤15 min)</small></div><span></span></div>';
     const trig=ALERTS.alerts.filter(a=>a.status==='triggered').slice(-10).reverse();
-    if (trig.length){ h+='</div><div class="sec">Sproženi</div><div class="body">'; for (const a of trig) h+='<div class="li" style="cursor:default"><div><b>'+esc(a.sym)+'</b> '+esc(a.price)+'</div><small>'+new Date(a.triggered).toLocaleString('sl-SI')+'</small></div>' }
-    h+='</div><div class="sec" style="text-transform:none">Alarme lahko nastaviš tudi direktno botu: <code>/alarm BTCUSD 60000 opomba</code>, seznam: /alarmi</div>';
+    if (trig.length){ h+='</div><div class="sec">Sproženi</div><div class="body">'; for (const a of trig) h+='<div class="li" style="cursor:default"><div><b>'+esc(a.sym)+'</b> '+esc(a.price)+'</div><small>'+(a.triggered?new Date(a.triggered).toLocaleString('sl-SI'):'')+'</small></div>' }
+    h+='</div><div class="sec" style="text-transform:none">'+(ALERTS.connected?'✅ Telegram povezan'+(ALERTS.bot?' (@'+esc(ALERTS.bot)+')':''):'⚠️ Telegram še ni povezan – obvestila ne bodo prišla (glej navodila v pogovoru).')+' · <a href="#" id="ghOut" style="color:#787b86">odklopi aplikacijo</a></div>';
   }
   openModal(h);
+  const gs=$('#ghSave'); if (gs) gs.onclick=async()=>{ const t=$('#ghT').value.trim(); if (!t) return; LS.set('ghToken', t);
+    try { await ghGet(); toast('✅ Povezano – alarme zdaj postavljaš na grafu'); closeModal(); loadAlerts() } catch(e){ LS.set('ghToken',''); toast('Ključ ne deluje: '+(e.message||e)) } };
   const add=$('#aAdd'); if (add) add.onclick=()=>{ const v=parseFloat(($('#aPrice').value||'').replace(',','.')); if (!(v>0)) return toast('Vpiši ceno'); closeModal(); newAlert(s.id, v) };
-  dlg.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const l=tgLink('D_'+b64u(b.dataset.del)); if (l){ window.open(l,'_blank') || (location.href=l); toast('V Telegramu pritisni START za brisanje') } });
+  dlg.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ delAlert(b.dataset.del); closeModal() });
   dlg.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ closeModal(); pick(b.dataset.go) });
+  const go=$('#ghOut'); if (go) go.onclick=e=>{ e.preventDefault(); LS.set('ghToken',''); closeModal(); loadAlerts(); toast('Aplikacija odklopljena') };
 }
 $('#alertBtn').onclick = alertDialog;
 setInterval(loadAlerts, 120000);
+
 
 /* ---------- samodejna posodobitev, ko izide nova verzija ---------- */
 const BUILD = '__BUILD__';
