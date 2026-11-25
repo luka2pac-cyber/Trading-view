@@ -206,6 +206,7 @@ const symOf = id => SYM[id] || addSym({id, src:'deribit', inst:id}, 'Deribit');
 
 let inds0 = LS.get('inds2', null);
 if (!inds0) inds0 = (LS.get('inds',['VOL'])||[]).map(n=>({name:n}));
+if (!LS.get('indsV3',false)){ inds0 = [{name:'LMA'},{name:'LVOL'},{name:'RSIMFI'}, ...inds0.filter(o=>!['VOL','LMA','LVOL','RSIMFI','MA','EMA'].includes(o.name))]; LS.set('inds2',inds0); LS.set('indsV3',true) }
 let state = {
   sym: LS.get('sym2','BTCUSD'),
   tf: (tfOf(LS.get('tf','D'))||tfOf('D')).k,
@@ -411,6 +412,74 @@ function positionFigs(chart, overlay, coordinates, isLong){
 reg({ name:'longPosition', totalStep:4, needDefaultPointFigure:true, needDefaultYAxisFigure:true, createPointFigures:({chart,overlay,coordinates})=>positionFigs(chart,overlay,coordinates,true) });
 reg({ name:'shortPosition', totalStep:4, needDefaultPointFigure:true, needDefaultYAxisFigure:true, createPointFigures:({chart,overlay,coordinates})=>positionFigs(chart,overlay,coordinates,false) });
 
+/* ---------- moji indikatorji (kot v TradingView) ---------- */
+const bigN = v => v==null||isNaN(v) ? '—' : Math.abs(v)>=1e9 ? (v/1e9).toFixed(2)+'B' : Math.abs(v)>=1e6 ? (v/1e6).toFixed(2)+'M' : Math.abs(v)>=1e3 ? (v/1e3).toFixed(2)+'K' : (+v).toFixed(2);
+function smaArr(vals, n){ const out=[]; let s=0, c=0; for (let i=0;i<vals.length;i++){ const v=vals[i]; s+=v; c++; if (i>=n){ s-=vals[i-n]; c-- } out.push(i>=n-1 ? s/n : null) } return out }
+function emaArr(vals, n){ const out=[], k=2/(n+1); let e=null, s=0; for (let i=0;i<vals.length;i++){ if (i<n-1){ s+=vals[i]; out.push(null) } else if (i===n-1){ s+=vals[i]; e=s/n; out.push(e) } else { e=vals[i]*k+e*(1-k); out.push(e) } } return out }
+function stdArr(vals, n, ma){ return vals.map((v,i)=>{ if (i<n-1) return null; let s=0; for (let j=i-n+1;j<=i;j++) s+=(vals[j]-ma[i])**2; return Math.sqrt(s/n) }) }
+const legend = (name, params, items) => ({name, calcParamsText:params, features:[], legends: items.map(([t,v,c])=>({title:t?{text:t+' ',color:'#787b86'}:'', value:{text:v,color:c}}))});
+const tipIdx = (chart, crosshair, len) => crosshair && crosshair.dataIndex!=null ? Math.min(crosshair.dataIndex, len-1) : len-1;
+// 1) Volumen kot v TW: stolpci v spodnjem delu cenovnega okna (24 % prosojnost) + SMA 20 (bela, 1 px)
+klinecharts.registerIndicator({
+  name:'LVOL', shortName:'Vol', calcParams:[20], figures:[],
+  calc: (list, ind) => { const v=list.map(k=>k.volume||0), ma=smaArr(v, ind.calcParams[0]||20); return list.map((k,i)=>({vol:v[i], ma:ma[i], up:k.close>=k.open})) },
+  draw: ({ctx, chart, indicator, bounding, xAxis}) => {
+    const r=indicator.result; if (!r || !r.length) return true;
+    const vr=chart.getVisibleRange(), bs=chart.getBarSpace(), from=Math.max(0,vr.from), to=Math.min(r.length, vr.to);
+    let mx=0; for (let i=from;i<to;i++) mx=Math.max(mx, r[i].vol||0, r[i].ma||0); if (!mx) return true;
+    const H=bounding.height*0.22, base=bounding.height, w=Math.max(1, bs.gapBar);
+    for (let i=from;i<to;i++){ const d=r[i]; const x=xAxis.convertToPixel(i), h=d.vol/mx*H;
+      ctx.fillStyle = d.up ? 'rgba(8,153,129,0.24)' : 'rgba(242,54,69,0.24)'; ctx.fillRect(x-w/2, base-h, w, h) }
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=1; ctx.beginPath(); let st=false;
+    for (let i=from;i<to;i++){ const m=r[i].ma; if (m==null) continue; const x=xAxis.convertToPixel(i), y=base-m/mx*H; st ? ctx.lineTo(x,y) : ctx.moveTo(x,y); st=true }
+    ctx.stroke(); return true;
+  },
+  createTooltipDataSource: ({chart, indicator, crosshair}) => { const r=indicator.result||[]; const d=r[tipIdx(chart,crosshair,r.length)]||{};
+    return legend('Vol', ' '+indicator.calcParams[0], [['',bigN(d.vol), d.up?'#089981':'#f23645'],['',bigN(d.ma),'#ffffff']]) }
+});
+// 2) MA-ji iz "mikul's combo indicator": EMA 10/50/200/21, SMA 7/200, Bollinger 20/2
+const LMA_LINES = [
+  ['ema10','EMA 10','#e91e63',1],['ema50','EMA 50','#ffeb3b',3],['ema200','EMA 200','#ffffff',4],['ema21','EMA 21','#00bcd4',2],
+  ['sma7','SMA 7','#ff9800',1],['sma200','SMA 200','#ffeb3b',1],['bbu','BB zg.','#9598a1',1],['bbm','BB sred.','#d1d4dc',2],['bbl','BB sp.','#9598a1',1]
+];
+klinecharts.registerIndicator({
+  name:'LMA', shortName:'MA (combo)', series:'price', precision:2, calcParams:[], shouldOhlc:false,
+  figures: LMA_LINES.map(([key,title,color,size])=>({key, title:title+': ', type:'line', styles:()=>({color, size, style:'solid'})})),
+  calc: list => { const c=list.map(k=>k.close);
+    const e10=emaArr(c,10), e50=emaArr(c,50), e200=emaArr(c,200), e21=emaArr(c,21), s7=smaArr(c,7), s200=smaArr(c,200), bm=smaArr(c,20), sd=stdArr(c,20,bm);
+    return list.map((k,i)=>({ema10:e10[i], ema50:e50[i], ema200:e200[i], ema21:e21[i], sma7:s7[i], sma200:s200[i], bbm:bm[i], bbu:bm[i]==null?null:bm[i]+2*sd[i], bbl:bm[i]==null?null:bm[i]-2*sd[i]})) },
+  createTooltipDataSource: ({chart, indicator, crosshair}) => { const r=indicator.result||[]; const d=r[tipIdx(chart,crosshair,r.length)]||{}; const p=(chart.getSymbol()||{}).pricePrecision??2;
+    return legend('MA', '', LMA_LINES.map(([k,t,c])=>[t, d[k]==null?'—':fmt(d[k],p), c])) }
+});
+// 3) RSI + MFI (14, 20, 80) kot Cryptoda skripta
+function rsiArr(c, n){ const out=[null]; let ag=0, al=0;
+  for (let i=1;i<c.length;i++){ const ch=c[i]-c[i-1], g=Math.max(ch,0), l=Math.max(-ch,0);
+    if (i<=n){ ag+=g; al+=l; if (i===n){ ag/=n; al/=n; out.push(al===0?100:100-100/(1+ag/al)) } else out.push(null) }
+    else { ag=(ag*(n-1)+g)/n; al=(al*(n-1)+l)/n; out.push(al===0?100:100-100/(1+ag/al)) } } return out }
+function mfiArr(list, n){ const tp=list.map(k=>(k.high+k.low+k.close)/3), out=[];
+  for (let i=0;i<list.length;i++){ if (i<n){ out.push(null); continue } let p=0, m=0;
+    for (let j=i-n+1;j<=i;j++){ const f=tp[j]*(list[j].volume||0); if (tp[j]>tp[j-1]) p+=f; else if (tp[j]<tp[j-1]) m+=f }
+    out.push(p+m===0 ? null : m===0 ? 100 : 100-100/(1+p/m)) } return out }
+klinecharts.registerIndicator({
+  name:'RSIMFI', shortName:'RSI + MFI', calcParams:[14,20,80], precision:2, minValue:0, maxValue:100,
+  figures:[{key:'rsi', title:'RSI: ', type:'line', styles:()=>({color:'#4caf50', size:1})},{key:'mfi', title:'MFI: ', type:'line', styles:()=>({color:'#ffffff', size:2})}],
+  calc: (list, ind) => { const [n]=ind.calcParams; const r=rsiArr(list.map(k=>k.close), n), m=mfiArr(list, n); return list.map((k,i)=>({rsi:r[i], mfi:m[i]})) },
+  draw: ({ctx, chart, indicator, bounding, xAxis, yAxis}) => {
+    const r=indicator.result||[], [, lo, hi]=indicator.calcParams; const vr=chart.getVisibleRange(), bs=chart.getBarSpace();
+    const Y=v=>yAxis.convertToPixel(v), W=bounding.width, from=Math.max(0,vr.from), to=Math.min(r.length,vr.to), w=Math.max(1,bs.bar);
+    ctx.fillStyle='rgba(120,123,134,0.12)'; ctx.fillRect(0, Y(hi), W, Y(lo)-Y(hi));
+    for (let i=from;i<to;i++){ const m=r[i]&&r[i].mfi; if (m==null) continue; const x=xAxis.convertToPixel(i);
+      if (m>hi){ ctx.fillStyle='rgba(242,54,69,0.35)'; ctx.fillRect(x-w/2,0,w,bounding.height) } else if (m<lo){ ctx.fillStyle='rgba(76,175,80,0.35)'; ctx.fillRect(x-w/2,0,w,bounding.height) } }
+    for (let i=from;i<to;i++){ const v=r[i]&&r[i].rsi; if (v==null) continue; const x=xAxis.convertToPixel(i);
+      if (v>70){ ctx.fillStyle='rgba(242,54,69,0.45)'; ctx.fillRect(x-w/2, Y(v), w, Y(70)-Y(v)) } else if (v<30){ ctx.fillStyle='rgba(41,98,255,0.45)'; ctx.fillRect(x-w/2, Y(30), w, Y(v)-Y(30)) } }
+    ctx.setLineDash([4,4]); ctx.lineWidth=1; ctx.strokeStyle='rgba(149,152,161,0.7)';
+    [70,30].forEach(v=>{ ctx.beginPath(); ctx.moveTo(0,Y(v)); ctx.lineTo(W,Y(v)); ctx.stroke() }); ctx.setLineDash([1,3]); ctx.beginPath(); ctx.moveTo(0,Y(50)); ctx.lineTo(W,Y(50)); ctx.stroke();
+    return false;
+  },
+  createTooltipDataSource: ({chart, indicator, crosshair}) => { const r=indicator.result||[]; const d=r[tipIdx(chart,crosshair,r.length)]||{};
+    return legend('RSI + MFI', ' '+indicator.calcParams.join(' '), [['RSI',d.rsi==null?'—':d.rsi.toFixed(2),'#4caf50'],['MFI',d.mfi==null?'—':d.mfi.toFixed(2),'#ffffff']]) }
+});
+
 /* ---------- graf ---------- */
 const chart = klinecharts.init('k', {styles:'dark', timezone: state.tz, locale:'en-US'});
 function applyStyles(){
@@ -537,6 +606,7 @@ $('#ctBtn').onclick = e => openPop(e.currentTarget, CTS.map(c=>item(c[0],c[1],c[
 
 /* ---------- indikatorji ---------- */
 const IND = [
+  ['LMA','Moji MA-ji (EMA 10/21/50/200, SMA 7/200, BB 20)',1,[]],['LVOL','Volumen kot v TW (Vol 20)',1,[20]],['RSIMFI','RSI + MFI (14, 20, 80)',0,[14,20,80]],
   ['MA','Moving Average (MA)',1,[5,10,30,60]],['EMA','Exponential MA (EMA)',1,[21,50,200]],['SMA','Smoothed MA (SMA)',1,[12,2]],
   ['BOLL','Bollinger Bands',1,[20,2]],['SAR','Parabolic SAR',1,[2,2,20]],['BBI','Bull and Bear Index',1,[3,6,12,24]],['AVP','Average Price',1,[]],
   ['VOL','Volumen',0,[5,10,20]],['RSI','Relative Strength Index (RSI)',0,[14]],['MACD','MACD',0,[12,26,9]],['KDJ','Stochastic (KDJ)',0,[9,3,3]],
@@ -559,7 +629,7 @@ function indDialog(){
     if (state.inds.length && !t){ h+='<div class="sec">Na grafu</div>';
       for (const o of state.inds){ const m=indMeta(o.name); if(!m) continue;
         h+='<div class="li" style="cursor:default"><div>'+esc(m[1])+'</div><div class="act"><input type="text" data-p="'+esc(o.name)+'" value="'+esc((o.params||m[3]).join(', '))+'" title="Parametri, ločeni z vejico" '+(m[3].length?'':'disabled')+'><button data-rm="'+esc(o.name)+'" title="Odstrani">✕</button></div></div>' } }
-    h+='<div class="sec">Vgrajeni</div>';
+    h+='<div class="sec">Moji (kot v TradingView) in vgrajeni</div>';
     for (const m of IND){ if (t && !m[1].toLowerCase().includes(t) && !m[0].toLowerCase().includes(t)) continue;
       const on=state.inds.some(o=>o.name===m[0]);
       h+='<div class="li" data-add="'+m[0]+'"><div>'+esc(m[1])+'</div><small>'+(m[2]?'na ceni':'panel')+(on?' · ✓':'')+'</small></div>' }
