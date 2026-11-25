@@ -351,7 +351,7 @@ let state = {
   stay: LS.get('stay',false),
   ct: LS.get('ct','candle_solid'),
   cursor: LS.get('cursor','cross'),
-  axis: LS.get('axis2','log'),
+  axis: (()=>{ if (!LS.get('linFix1',false)){ LS.set('linFix1',true); LS.set('axis2','normal') } return LS.get('axis2','normal') })(), // Luka ne gleda log grafov: privzeto linearno
   closed: LS.get('closedGroups',[]),
   upC: LS.get('upC','#089981'), dnC: LS.get('dnC','#f23645'), grid: LS.get('grid',true)
 };
