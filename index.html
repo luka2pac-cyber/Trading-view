@@ -1073,7 +1073,29 @@ function tick(){ const t=new Date().toLocaleTimeString('sl-SI',{timeZone:state.t
   $('#clock').textContent=t+' '+off }
 setInterval(tick,1000); tick();
 $('#clockBtn').onclick = e => openPop(e.currentTarget, item('Europe/Ljubljana','Ljubljana (CET)','',state.tz!=='UTC')+item('UTC','UTC','',state.tz==='UTC'), v=>{ state.tz=v; chart.setTimezone(v); LS.set('tz',v); tick() }, 'up');
-function setAxis(a){ state.axis=a; LS.set('axis2',a); chart.overrideYAxis({paneId:'candle_pane', name: a==='pct'?'percentage':a==='log'?'logarithm':'normal'}); yAuto(true);
+// cene na log osi kot v TradingView: okrogle vrednosti, enakomerno razporejene po višini; bolj podrobne, ko graf raztegneš
+function logTicks({range, bounding, defaultTicks}){
+  if (state.axis!=='log') return defaultTicks;
+  const H=bounding.height, rf=range.realFrom, rr=range.realRange, lo=range.displayFrom, hi=range.displayTo;
+  if (!(rr>0) || !(H>0) || !(hi>0)) return defaultTicks;
+  const L=v=>Math.log10(1+v), Y=v=>Math.round((1-(L(v)-rf)/rr)*H), G=32, ppd=H/rr, out=[];
+  const add=(v,st)=>{ if (v<lo || v>hi) return; const y=Y(v); if (y<8 || y>H-8) return; const dec=Math.max(0, Math.ceil(-Math.log10(st)-1e-9));
+    out.push({value:String(v), coord:y, text:v.toLocaleString('en-US',{minimumFractionDigits:dec, maximumFractionDigits:dec})}) };
+  const k0=Math.floor(Math.log10(Math.max(lo,1e-8))), k1=Math.ceil(Math.log10(hi));
+  if (ppd*Math.log10(2.5) < G){ // zelo stisnjeno: samo 1·10^k (po potrebi vsako n-to desetico) ali 1, 2, 5
+    if (ppd*Math.log10(2) >= G) for (let k=k0;k<=k1;k++) for (const m of [1,2,5]) add(+(m*10**k).toPrecision(12), 10**k);
+    else { const n=Math.max(1, Math.ceil(G/ppd)); for (let k=k0;k<=k1;k++) if (k%n===0) add(10**k, 10**k) }
+  } else {
+    const STEPS=[2.5,2,1,0.5,0.25,0.2,0.1,0.05,0.025,0.02,0.01,0.005,0.0025,0.002,0.001];
+    for (let k=k0;k<=k1;k++){ const u=10**k;
+      for (const [a,b] of [[1,2],[2,5],[5,10]]){
+        let st=b-a; for (const s of STEPS){ if (s>=b-a || Math.abs((b-a)/s-Math.round((b-a)/s))>1e-6) continue; if (Math.log10(b/(b-s))*ppd >= G) st=s; else break }
+        for (let m=a; m<b-1e-9; m+=st) add(+(m*u).toPrecision(12), st*u) } }
+  }
+  out.sort((x,y)=>y.coord-x.coord); const res=[]; for (const t of out){ if (!res.length || Math.abs(res[res.length-1].coord-t.coord)>=G*0.7) res.push(t) }
+  return res.length>=2 ? res : defaultTicks;
+}
+function setAxis(a){ state.axis=a; LS.set('axis2',a); chart.overrideYAxis({paneId:'candle_pane', name: a==='pct'?'percentage':a==='log'?'logarithm':'normal', createTicks: logTicks}); yAuto(true);
   $('#pctBtn').classList.toggle('on',a==='pct'); $('#logBtn').classList.toggle('on',a==='log'); $('#autoBtn').classList.toggle('on',a!=='pct') }
 $('#pctBtn').onclick=()=>setAxis(state.axis==='pct'?'normal':'pct'); $('#logBtn').onclick=()=>setAxis(state.axis==='log'?'normal':'log'); $('#autoBtn').onclick=()=>{ setAxis(state.axis==='pct'?'normal':state.axis); resetView(true) };
 
