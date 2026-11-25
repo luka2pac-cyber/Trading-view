@@ -41,6 +41,14 @@ def download(tickers, interval):
             if d is None:
                 continue
             d = d.dropna(subset=["Open", "High", "Low", "Close"])
+            if interval == "1d" and t.endswith("=X") and len(d) > 1:
+                # Yahoo pri forexu (EURUSD=X …) daje dnevni Open ≈ Close (same doji sveče).
+                # Forex teče neprekinjeno, zato je Open = prejšnji Close (kot v TV).
+                d = d.copy()
+                po = d["Close"].shift(1)
+                d.loc[po.notna(), "Open"] = po[po.notna()]
+                d["High"] = d[["High", "Open", "Close"]].max(axis=1)
+                d["Low"] = d[["Low", "Open", "Close"]].min(axis=1)
             if not d.empty:
                 out[t] = d
         time.sleep(1)
@@ -189,8 +197,6 @@ def main():
     for _t in ["EURUSD=X"]:  # DEBUG začasno
         if _t in data["1d"]:
             print("DBG1d", _t, "\n" + data["1d"][_t].tail(12).to_string())
-        if _t in data["1h"]:
-            print("DBG1h", _t, "\n" + data["1h"][_t].tail(30).to_string())
 
     try:
         ext = extended([t for t in want if US_RE.match(t)])
