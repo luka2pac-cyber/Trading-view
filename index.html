@@ -1478,7 +1478,7 @@ reg({ name:'perpLine', totalStep:2, needDefaultPointFigure:false,
 function posDraw(){
   chart.removeOverlay({groupId:'pos'}); const L=chart.getDataList(); if (!L.length) return;
   for (const f of POS.fut) chart.createOverlay({name:'perpLine', groupId:'pos', lock:true, points:[{timestamp:L[L.length-1].timestamp, value:f.average_price},{timestamp:L[L.length-1].timestamp, value:f.average_price}],
-    extendData:{t:L[L.length-1].timestamp, p:f.average_price, txt:'PERP '+(f.size<0?'S ':'L ')+fmt(Math.abs(f.btc),3)+' BTC @ '+fmt(f.average_price,1)+' · P&L $'+fmt(f.plUsd,0)}});
+    extendData:{t:L[L.length-1].timestamp, p:f.average_price, txt:'PERP '+(f.size<0?'S ':'L ')+fmt(Math.abs(f.btc),3)+' BTC @ '+fmt(f.average_price,1)+' · nereal. P&L $'+fmt(f.plUsd,0)+(f.lin?'':' ('+(f.floating_profit_loss>=0?'+':'')+(+f.floating_profit_loss||0).toFixed(4)+' BTC)')}});
   if (!POS.list.length) return;
   const last=L[L.length-1];
   const list=POS.list.map(x=>({exp:x.exp, K:x.K, cp:x.cp, size:x.size, be: x.average_price_usd!=null ? (x.cp==='P' ? x.K-x.average_price_usd : x.K+x.average_price_usd) : null}));
@@ -1490,13 +1490,13 @@ function posHtml(){
   if (!POS.list.length && !POS.fut.length) return '<div class="om" style="margin-top:4px">Ni odprtih pozicij.</div>';
   const S=OPT.S||0; let D=0,G=0,T=0,V=0, pl=0;
   const frows=POS.fut.map(f=>{ D+=f.delta||0; pl+=f.plUsd||0;
-    return '<tr><td style="color:#2962ff">'+(f.size<0?'S ':'L ')+(f.lin?'PERP USDC':'PERP')+'</td><td>—</td><td>'+fmt(Math.abs(f.btc),3)+(f.lin?'':'<br><span class="om">$'+fmt(Math.abs(f.size),0)+'</span>')+'</td><td>'+fmt(f.average_price,0)+'→'+fmt(f.mark_price,0)+'</td><td style="color:'+((f.plUsd||0)>=0?'#089981':'#f23645')+'">'+fmt(f.plUsd,0)+'</td></tr>' }).join('');
+    return '<tr><td style="color:#2962ff">'+(f.size<0?'S ':'L ')+(f.lin?'PERP USDC':'PERP')+'</td><td>—</td><td>'+fmt(Math.abs(f.btc),3)+(f.lin?'':'<br><span class="om">$'+fmt(Math.abs(f.size),0)+'</span>')+'</td><td>'+fmt(f.average_price,0)+'→'+fmt(f.mark_price,0)+'</td><td style="color:'+((f.plUsd||0)>=0?'#089981':'#f23645')+'">'+fmt(f.plUsd,0)+(f.lin?'':'<br><span class="om">'+(+f.floating_profit_loss||0).toFixed(4)+' BTC</span>')+'</td></tr>' }).join('');
   const rows=POS.list.map(x=>{ D+=x.delta||0; G+=x.gamma||0; T+=x.theta||0; V+=x.vega||0; pl+=x.floating_profit_loss_usd||0; const d=new Date(x.exp);
     const mk=x.lin ? x.mark_price : x.mark_price*x.index_price;
     return '<tr><td style="color:'+(x.cp==='P'?'#f23645':'#089981')+'">'+(x.size<0?'S ':'L ')+x.cp+' '+kfmt(x.K)+'</td><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.</td><td>'+Math.abs(x.size)+'</td><td>$'+fmt(x.average_price_usd,0)+'→'+fmt(mk,0)+'</td><td style="color:'+((x.floating_profit_loss_usd||0)>=0?'#089981':'#f23645')+'">'+fmt(x.floating_profit_loss_usd,0)+'</td></tr>' }).join('');
   return '<div class="oh2"><b>Moje pozicije</b> <span class="om">(Deribit, samo branje)</span></div><table><tr><th>Pozicija</th><th>Exp</th><th>Kol.</th><th>Avg $ → zdaj</th><th>P&L $</th></tr>'+frows+rows+'</table>'+
     '<div>Δ <b>'+D.toFixed(3)+'</b> · Γ <b>'+G.toFixed(5)+'</b> · Θ <b>'+T.toFixed(1)+'</b> · ν <b>'+V.toFixed(1)+'</b> · P&L <b style="color:'+(pl>=0?'#089981':'#f23645')+'">$'+fmt(pl,0)+'</b></div>'+
-    '<div class="om">'+(POS.fut.length?'Modra vodoravna = vstop PERP (avg price). Δ vključuje PERP. ':'')+'Polna črta = strike do expiryja, črtkana = break-even. Greeks kot jih vrne Deribit (vsota).</div>';
+    '<div class="om">'+(POS.fut.length?'Modra vodoravna = vstop PERP (avg price). P&L = nerealiziran (Deribit Floating P&L, brez funding in že zaprtih delov), pretvorjen v $ po trenutni ceni. Δ vključuje PERP. ':'')+'Polna črta = strike do expiryja, črtkana = break-even. Greeks kot jih vrne Deribit (vsota).</div>';
 }
 function posDialog(){
   const k=drbKey();
