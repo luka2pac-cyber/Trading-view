@@ -1434,9 +1434,9 @@ async function posFetch(){
   const k=drbKey(); if (!k) { POS.list=[]; return }
   try {
     const a = await rpc('public/auth',{grant_type:'client_credentials', client_id:k.id, client_secret:k.secret});
-    const r = await rpc('private/get_positions',{currency:'BTC', kind:'option', access_token:a.access_token});
-    POS.list = (r||[]).filter(x=>x.size && Math.abs(x.size)>1e-9).map(x=>{ const p=x.instrument_name.split('-');
-      return {...x, exp:expTs(p[1]), code:p[1], K:+p[2], cp:p[3]} }).sort((a,b)=>a.exp-b.exp||a.K-b.K);
+    const r = await rpc('private/get_positions',{currency:'any', kind:'option', access_token:a.access_token});
+    POS.list = (r||[]).filter(x=>x.size && Math.abs(x.size)>1e-9 && /^BTC(_USDC)?-/.test(x.instrument_name)).map(x=>{ const p=x.instrument_name.split('-');
+      return {...x, lin:p[0]!=='BTC', exp:expTs(p[1]), code:p[1], K:+p[2], cp:p[3]} }).sort((a,b)=>a.exp-b.exp||a.K-b.K);
     POS.err=null; POS.t=Date.now();
   } catch(e){ POS.err = (e && (e.message||e.code)) || 'napaka'; }
 }
@@ -1464,7 +1464,7 @@ function posHtml(){
   if (!POS.list.length) return '<div class="om" style="margin-top:4px">Ni odprtih opcij.</div>';
   const S=OPT.S||0; let D=0,G=0,T=0,V=0, pl=0;
   const rows=POS.list.map(x=>{ D+=x.delta||0; G+=x.gamma||0; T+=x.theta||0; V+=x.vega||0; pl+=x.floating_profit_loss_usd||0; const d=new Date(x.exp);
-    const mk=x.mark_price*x.index_price;
+    const mk=x.lin ? x.mark_price : x.mark_price*x.index_price;
     return '<tr><td style="color:'+(x.cp==='P'?'#f23645':'#089981')+'">'+(x.size<0?'S ':'L ')+x.cp+' '+kfmt(x.K)+'</td><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.</td><td>'+Math.abs(x.size)+'</td><td>$'+fmt(x.average_price_usd,0)+'→'+fmt(mk,0)+'</td><td style="color:'+((x.floating_profit_loss_usd||0)>=0?'#089981':'#f23645')+'">'+fmt(x.floating_profit_loss_usd,0)+'</td></tr>' }).join('');
   return '<div class="oh2"><b>Moje pozicije</b> <span class="om">(Deribit, samo branje)</span></div><table><tr><th>Opcija</th><th>Exp</th><th>Kol.</th><th>Prem. $ → zdaj</th><th>P&L $</th></tr>'+rows+'</table>'+
     '<div>Δ <b>'+D.toFixed(3)+'</b> · Γ <b>'+G.toFixed(5)+'</b> · Θ <b>'+T.toFixed(1)+'</b> · ν <b>'+V.toFixed(1)+'</b> · P&L <b style="color:'+(pl>=0?'#089981':'#f23645')+'">$'+fmt(pl,0)+'</b></div>'+
@@ -1476,7 +1476,7 @@ function posDialog(){
     '<div><b>Enkratna nastavitev (samo branje):</b><br>1. Deribit: zgoraj desno Account → <b>API</b> → <b>Add new key</b> (Deribit-generated)<br>2. Scopes: <b>Trade = read</b>. Nič s "write" in nič Wallet.<br>3. Name: <b>luka-charts</b> → shrani<br>4. <b>Client Secret se pokaže samo enkrat</b> – takoj kopiraj Client ID in Client Secret in ju prilepi sem.</div>'+
     '<div class="om">Ključ ostane samo v tem brskalniku/telefonu. Z njim ni mogoče trgovati ali dvigovati.</div>'+
     '<input type="text" id="dkId" placeholder="Client ID" autocomplete="off" spellcheck="false" value="'+esc(k?k.id:'')+'">'+
-    '<input type="text" id="dkSec" placeholder="Client Secret" autocomplete="off" spellcheck="false">'+
+    '<input type="password" id="dkSec" placeholder="Client Secret" autocomplete="new-password" spellcheck="false">'+
     '<button id="dkSave" style="background:#2962ff;color:#fff;justify-self:start">Shrani in preveri</button>'+
     (k?'<a href="#" id="dkOut" style="color:#f23645">Odklopi in izbriši ključ</a>':'')+'</div>');
   $('#dkSave').onclick=async()=>{ const id=$('#dkId').value.trim(), sec=$('#dkSec').value.trim(); if (!id||!sec) return toast('Vpiši oba');
