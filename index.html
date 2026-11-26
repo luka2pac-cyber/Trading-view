@@ -30,7 +30,9 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 .caret{font-size:9px;color:var(--mute)}
 #price{font-weight:700;font-variant-numeric:tabular-nums;padding:0 4px 0 6px}
 #chg{font-variant-numeric:tabular-nums;padding-right:6px}
-#cur{color:#8a8f98;font-size:12px;padding-right:6px}
+#cur{color:#d1d4dc;font-size:12px;font-weight:600;padding-right:6px}
+#curTag{position:absolute;top:6px;right:8px;z-index:5;pointer-events:none;font-size:12px;font-weight:600;color:#d1d4dc;background:#2a2e39;padding:2px 7px;border-radius:4px}
+#curTag:empty{display:none}
 .up{color:var(--up)}.dn{color:var(--dn)}
 .grow{flex:1 1 auto!important}
 #left{display:flex;flex-direction:column;align-items:center;padding:4px 0;background:var(--bg);border-right:4px solid var(--bg);overflow-y:auto;scrollbar-width:none}
@@ -177,7 +179,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   #ctBtn,#indBtn{display:none!important}
   #mMore{font-size:27px!important}
   #symBtn svg{display:none}
-  #price{font-size:17px}#chg{font-size:14.5px;padding-right:2px}
+  #price{font-size:17px}#cur{font-size:14px;padding-right:4px}#chg{font-size:14.5px;padding-right:2px}#curTag{font-size:14px}
   #left,#bottom,#bottomL,#bottomR,#rstrip{display:none!important}
   #chart{grid-column:1/-1;grid-row:2;border-radius:0}
   #mnav{grid-column:1/-1;grid-row:3}
@@ -260,7 +262,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
     <button id="wlBtnM" title="Watchlist" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></button>
   </div>
   <div id="left"></div>
-  <div id="chart"><div id="k"></div><button id="maEye" title="Skrij/pokaži moving average"></button><button id="fab" class="monly" data-popbtn="1" title="Risanje"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 6l3 3"/></svg></button><div id="dtb"></div><div id="hint"></div></div>
+  <div id="chart"><div id="k"></div><div id="curTag"></div><button id="maEye" title="Skrij/pokaži moving average"></button><button id="fab" class="monly" data-popbtn="1" title="Risanje"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 6l3 3"/></svg></button><div id="dtb"></div><div id="hint"></div></div>
   <div id="wl">
     <div class="wlTop"><button id="wlMenu" class="monly" title="Skupine" style="padding:6px"><svg class="i" viewBox="0 0 24 24" style="width:26px;height:26px"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div id="wlPills" class="monly"></div><b>Watchlist</b><button id="wlSearch" title="Poišči / dodaj simbol"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button id="wlEdit" title="Uredi watchlist (odstrani / premakni)"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg></button></div>
     <div class="wlh"><span>Simbol</span><span style="text-align:right">Zadnja</span><span style="text-align:right">Spr. %</span></div>
@@ -794,7 +796,7 @@ function load(){
   closeDtb(); selectedId=null; yAuto(true);
   chart.removeOverlay({groupId:'d'});
   chart.setSymbol({ticker:s.id, pricePrecision: s.pp!=null ? s.pp : ppFor((META.symbols[s.id]||{}).last), volumePrecision: 0});
-  { const c=curOf(s); chart.setStyles({candle:{tooltip:{title:{color:'#d1d4dc', template:'{ticker} · {period}'+(c?' · '+c:'')}}}}) }
+  { const c=curOf(s); chart.setStyles({candle:{tooltip:{title:{color:'#d1d4dc', template:'{ticker} · {period}'+(c?' · '+c:'')}}}}); $('#curTag').textContent = c }
   chart.setPeriod(tf.p);
   $('#symBtn').classList.toggle('long', state.sym.length>7);
   renderTfs(); headerPrice(); updateStatus(); markSel();
