@@ -147,6 +147,59 @@ def ljse_fetch(it):
     return out
 
 
+def _day(ts):
+    t = pd.Timestamp(ts)
+    if t.tzinfo is not None:
+        t = t.tz_convert("America/New_York")
+    return t.date()
+
+
+def _yahoo_daily(t, rng="1mo"):
+    """Dnevne sveče neposredno iz Yahoo chart API (brez yfinance)."""
+    j = _rq.get(f"https://query2.finance.yahoo.com/v8/finance/chart/{t}?range={rng}&interval=1d",
+                headers={"User-Agent": "Mozilla/5.0"}, timeout=30).json()
+    r = j["chart"]["result"][0]
+    q = r["indicators"]["quote"][0]
+    tz = r["meta"].get("exchangeTimezoneName", "America/New_York")
+    idx = [pd.Timestamp(pd.Timestamp(x, unit="s", tz="UTC").tz_convert(tz).date()) for x in r["timestamp"]]
+    df = pd.DataFrame({"Open": q["open"], "High": q["high"], "Low": q["low"], "Close": q["close"],
+                       "Volume": q["volume"]}, index=idx)
+    return df.dropna(subset=["Open", "High", "Low", "Close"])
+
+
+def patch_daily(data):
+    """yfinance po splitu (npr. SNDK 8:1, 20. 11. 2026) zna izpustiti zadnje dnevne sveče.
+    Če dnevni podatki zaostajajo za urnimi, manjkajoče dni doda iz Yahoo chart API,
+    sicer jih sestavi iz urnih sveč."""
+    for t, d in list(data["1d"].items()):
+        intra = data["1h"].get(t)
+        if intra is None or intra.empty or d.empty:
+            continue
+        last_d, last_i = _day(d.index[-1]), _day(intra.index[-1])
+        if last_d >= last_i:
+            continue
+        add = None
+        try:
+            y = _yahoo_daily(t)
+            add = y[[x.date() > last_d for x in y.index]]
+        except Exception as e:  # noqa
+            print(f"  ! {t}: Yahoo chart API: {e}")
+        if add is None or add.empty:
+            h = intra.copy()
+            h["_d"] = [_day(x) for x in h.index]
+            h = h[h["_d"] > last_d]
+            add = h.groupby("_d").agg(Open=("Open", "first"), High=("High", "max"), Low=("Low", "min"),
+                                      Close=("Close", "last"), Volume=("Volume", "sum"))
+            add.index = [pd.Timestamp(x) for x in add.index]
+        if add.empty:
+            continue
+        if d.index.tz is not None:
+            add.index = add.index.tz_localize(d.index.tz)
+        cols = [c for c in ["Open", "High", "Low", "Close", "Volume"] if c in d.columns]
+        data["1d"][t] = pd.concat([d, add[cols]]).sort_index()
+        print(f"  ~ {t}: dodanih {len(add)} manjkajočih dnevnih sveč ({last_d} → {last_i})")
+
+
 US_RE = re.compile(r"^[A-Z]{1,5}(-[A-Z])?$")
 
 
@@ -194,6 +247,7 @@ def main():
     want = sorted({c for it in items for c in it.get("y", [])} | {c for it in items for c in it.get("ratio", [])})
     data = {iv: download(want, iv) for iv in INTERVALS}
     print("Prenešeno:", {iv: len(d) for iv, d in data.items()}, "od", len(want))
+    patch_daily(data)
 
     try:
         ext = extended([t for t in want if US_RE.match(t)])

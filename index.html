@@ -30,6 +30,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 .caret{font-size:9px;color:var(--mute)}
 #price{font-weight:700;font-variant-numeric:tabular-nums;padding:0 4px 0 6px}
 #chg{font-variant-numeric:tabular-nums;padding-right:6px}
+#cur{color:#8a8f98;font-size:12px;padding-right:6px}
 .up{color:var(--up)}.dn{color:var(--dn)}
 .grow{flex:1 1 auto!important}
 #left{display:flex;flex-direction:column;align-items:center;padding:4px 0;background:var(--bg);border-right:4px solid var(--bg);overflow-y:auto;scrollbar-width:none}
@@ -170,7 +171,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
   #mTfQ button.on{color:#fff;background:#2a2a2a}
   #mTf{font-size:15px;color:#9a9a9a;order:2;padding:6px 5px!important}
   #symBtn{order:0}
-  #price{order:3}#chg{order:4}
+  #price{order:3}#cur{order:3}#chg{order:4}
   #top .grow{order:5}
   #mMore{order:6;padding:4px 6px!important}
   #ctBtn,#indBtn{display:none!important}
@@ -236,7 +237,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 <div id="app">
   <div id="top">
     <button id="symBtn" title="Iskanje simbola"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><span id="symName">—</span></button>
-    <div id="mTfQ" class="monly"></div><span id="price">—</span><span id="chg"></span>
+    <div id="mTfQ" class="monly"></div><span id="price">—</span><span id="cur"></span><span id="chg"></span>
     <div class="vs"></div>
     <div id="tfFav" style="display:flex"></div>
     <button id="tfMore" title="Interval" data-popbtn="1"><span class="caret">▼</span></button>
@@ -766,7 +767,7 @@ function quote(s){
 }
 function headerPrice(){
   const s = symOf(state.sym), q = quote(s);
-  $('#symName').textContent = s.id; $('#price').textContent = fmt(q.last, q.pp);
+  $('#symName').textContent = s.id; $('#price').textContent = fmt(q.last, q.pp); $('#cur').textContent = curOf(s);
   const c=$('#chg'); c.textContent = q.chg==null?'':(q.chg>=0?'+':'')+q.chg.toFixed(2)+'%'; c.className = q.chg==null?'':q.chg>=0?'up':'dn';
   if (q.last!=null) document.title = fmt(q.last,q.pp)+' · '+s.id;
 }
