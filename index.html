@@ -1351,9 +1351,12 @@ reg({ name:'ivCone', totalStep:2, needDefaultPointFigure:false,
     figs.push({type:'polygon', attrs:{coordinates:[...u1, ...l1.slice().reverse()]}, styles:{style:'fill', color:'rgba(41,98,255,0.16)'}, ignoreEvent:true});
     for (const [c,col,dash] of [[u1,'#2962ff',0],[l1,'#2962ff',0],[u2,'#787b86',1],[l2,'#787b86',1]])
       figs.push({type:'line', attrs:{coordinates:c}, styles:{color:col, size:dash?1:1.5, style:dash?'dashed':'solid', dashedValue:[4,4]}, ignoreEvent:true});
+    const sz=chart.getSize('candle_pane','main')||{}, PH=sz.height||400, PW=sz.width||600; let k=0;
     d.nodes.forEach((n,i)=>{ if (!n.lab) return; const a=u1[i+1], b=l1[i+1];
+      // oznaka nad ±2σ; če je to nad vrhom grafa (daljni expiryji), gre na dno grafa (zgoraj desno je kartica Opcije)
+      const top=u2[i+1].y-4, ly = top>=22 ? top : Math.min(PH-6, l2[i+1].y+16) - 18*(top<22 && l2[i+1].y+16>PH-6 ? k++ : 0), al = a.x>PW-80 ? 'right' : a.x<80 ? 'left' : 'center';
       figs.push({type:'line', attrs:{coordinates:[{x:a.x,y:u2[i+1].y},{x:a.x,y:l2[i+1].y}]}, styles:{color:'rgba(255,152,0,0.5)', size:1, style:'dashed', dashedValue:[2,3]}, ignoreEvent:true});
-      figs.push({type:'text', attrs:{x:a.x, y:u2[i+1].y-4, text:n.lab+' 1σ ±'+n.pct.toFixed(1)+'%', align:'center', baseline:'bottom'}, styles:{...lbl('#ff9800'), color:'#000', size:10}, ignoreEvent:true});
+      figs.push({type:'text', attrs:{x:a.x, y:ly, text:n.lab+' 1σ ±'+n.pct.toFixed(1)+'%', align:al, baseline:'bottom'}, styles:{...lbl('#ff9800'), color:'#000', size:10}, ignoreEvent:true});
       figs.push({type:'text', attrs:{x:a.x, y:a.y-2, text:kfmt(n.u1), align:'center', baseline:'bottom'}, styles:{color:'#82a6ff', size:10, backgroundColor:'transparent'}, ignoreEvent:true});
       figs.push({type:'text', attrs:{x:b.x, y:b.y+2, text:kfmt(n.l1), align:'center', baseline:'top'}, styles:{color:'#82a6ff', size:10, backgroundColor:'transparent'}, ignoreEvent:true}) });
     return figs;
@@ -1380,13 +1383,16 @@ async function optData(){
 function optDraw(){
   const L=chart.getDataList(); if (!L.length || !OPT.exp.length) return;
   const last=L[L.length-1], S=last.close, now=Date.now(); OPT.S=S;
-  const fr=OPT.exp.filter(e=>e.fri && e.days<=95);
+  // stožec gre do 95 dni ali do expiryja zadnje moje odprte opcije (Deribit pozicije), kar je dlje
+  const pc=new Set(POS.list.map(x=>x.code)), pEnd=POS.list.reduce((m,x)=>Math.max(m,x.exp||0),0), hz=Math.max(now+95*864e5, pEnd);
+  const fr=OPT.exp.filter(e=>(e.fri || pc.has(e.code)) && e.ts<=hz);
   const lastFri = e => { const d=new Date(e.ts); return new Date(e.ts+7*864e5).getUTCMonth()!==d.getUTCMonth() };
-  const labs=new Set(); fr.slice(0,2).forEach(e=>labs.add(e.code)); fr.filter(lastFri).slice(0,3).forEach(e=>labs.add(e.code));
+  const labs=new Set(); fr.filter(e=>e.days<=95).slice(0,2).forEach(e=>labs.add(e.code)); fr.filter(e=>e.days<=95 && lastFri(e)).slice(0,3).forEach(e=>labs.add(e.code));
+  fr.filter(e=>pc.has(e.code)).forEach(e=>labs.add(e.code)); OPT.posEnd=pEnd>now ? pEnd : 0;
   const nodes=fr.map(e=>{ const s=e.atm/100*Math.sqrt(e.days/365); const d=new Date(e.ts);
     return {ts:e.ts, u1:S*Math.exp(s), l1:S*Math.exp(-s), u2:S*Math.exp(2*s), l2:S*Math.exp(-2*s), pct:(Math.exp(s)-1)*100,
-      lab: labs.has(e.code) ? d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.' : null} });
-  const nr=nodes.filter((n,i)=>fr[i].days<=35); const rr=nr.length?nr:nodes.slice(0,1); OPT.rng=[Math.max(...rr.map(n=>n.u1))*1.02, Math.min(...rr.map(n=>n.l1))*0.98];
+      lab: labs.has(e.code) ? (pc.has(e.code)?'★ ':'')+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+(e.days>95?String(d.getUTCFullYear()).slice(2):'') : null} });
+  const nr=nodes.filter((n,i)=>fr[i].days<=35 || pc.has(fr[i].code)); const rr=nr.length?nr:nodes.slice(0,1); OPT.rng=[Math.max(...rr.map(n=>n.u1))*1.02, Math.min(...rr.map(n=>n.l1))*0.98];
   chart.removeIndicator({name:'OPTRNG', paneId:'candle_pane'}); chart.createIndicator({name:'OPTRNG', paneId:'candle_pane'}, true);
   chart.removeOverlay({groupId:'opt'});
   chart.createOverlay({name:'ivCone', groupId:'opt', lock:true, points:[{timestamp:last.timestamp, value:S},{timestamp:last.timestamp, value:S}], extendData:{t0:last.timestamp, S, nodes}});
@@ -1402,12 +1408,12 @@ function optCard(fr, labs){
   const rank = st ? (st.cur-st.min)/(st.max-st.min)*100 : null, prem = st && rvNow!=null ? st.cur-rvNow : null;
   const lvl = st==null ? '—' : st.pct>=70 ? '<b style="color:#f23645">VISOKA</b>' : st.pct<=30 ? '<b style="color:#089981">NIZKA</b>' : '<b style="color:#ffb74d">SREDNJA</b>';
   const rows = fr.filter(e=>labs.has(e.code)).map(e=>{ const s=e.atm/100*Math.sqrt(e.days/365), d=new Date(e.ts);
-    return '<tr><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.</td><td>'+Math.round(e.days)+'d</td><td>'+e.atm.toFixed(1)+'%</td><td>'+kfmt(S*Math.exp(-s))+' – '+kfmt(S*Math.exp(s))+'</td></tr>' }).join('');
+    return '<tr><td>'+(POS.list.some(x=>x.code===e.code)?'★ ':'')+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+(e.days>95?String(d.getUTCFullYear()).slice(2):'')+'</td><td>'+Math.round(e.days)+'d</td><td>'+e.atm.toFixed(1)+'%</td><td>'+kfmt(S*Math.exp(-s))+' – '+kfmt(S*Math.exp(s))+'</td></tr>' }).join('');
   c.innerHTML='<div class="oh"><b>Opcije'+(st?' · DVOL '+st.cur.toFixed(1):'')+' ▾</b></div>'+
     (st ? '<div>DVOL <b>'+st.cur.toFixed(1)+'</b> · IV je '+lvl+'</div><div class="om">IV rank '+rank.toFixed(0)+'% · percentil '+st.pct.toFixed(0)+'% (1 leto: '+st.min.toFixed(0)+'–'+st.max.toFixed(0)+')</div>' : '')+
     (rvNow!=null ? '<div>RV30 <b>'+rvNow.toFixed(1)+'</b> · premija IV−RV <b style="color:'+(prem>=0?'#089981':'#f23645')+'">'+(prem>=0?'+':'')+prem.toFixed(1)+'</b></div>' : '')+
     '<table><tr><th>Expiry</th><th></th><th>ATM IV</th><th>±1σ (68%)</th></tr>'+rows+'</table>'+
-    '<div class="om">Modro polje = ±1σ, črtkano = ±2σ (95%) · Deribit mark IV</div>'+posHtml();
+    '<div class="om">Modro polje = ±1σ, črtkano = ±2σ (95%) · Deribit mark IV'+(OPT.posEnd?' · ★ = expiry mojih opcij, stožec do zadnje':'')+'</div>'+posHtml();
   const ps=c.querySelector('#posSet'); if (ps) ps.onclick=e=>{ e.preventDefault(); e.stopPropagation(); posDialog() };
   c.querySelector('.oh').onclick=()=>{ c.classList.toggle('min'); LS.set('optMin', c.classList.contains('min')) };
   c.classList.toggle('min', !!LS.get('optMin', isM()));
@@ -1416,10 +1422,13 @@ async function optRefresh(){ try { await Promise.all([optData(), posFetch()]); o
 function optFit(){
   const L=chart.getDataList(); if (L.length<3) return; const per=L[L.length-1].timestamp-L[L.length-2].timestamp;
   const sz=chart.getSize('candle_pane','main'), W=(sz&&sz.width)||600, bs=chart.getBarSpace().bar;
-  chart.setOffsetRightDistance(Math.min(W*0.45, 35*864e5/per*bs)+10);
+  // prihodnji prostor desno: 35 dni ali do zadnjega expiryja mojih opcij; če je predaleč, se graf toliko oddalji (stisne), da se stožec vidi do konca
+  const days=Math.max(35, OPT.posEnd ? (OPT.posEnd-L[L.length-1].timestamp)/864e5+2 : 0), bars=days*864e5/per, cap=W*(OPT.posEnd?0.55:0.45);
+  let b=bs; if (OPT.posEnd && bars*b>cap){ b=Math.max(1, cap/bars); chart.setBarSpace(b) }
+  chart.setOffsetRightDistance(Math.min(cap, bars*b)+10);
 }
 function optOn(){
-  if (!OPT.on){ OPT.on=true; OPT.timer=setInterval(optRefresh, 5*60*1000); OPT.ptimer=setInterval(async()=>{ if (!drbKey()) return; await posFetch(); posDraw(); optCardRefresh() }, 60*1000) }
+  if (!OPT.on){ OPT.on=true; OPT.timer=setInterval(optRefresh, 5*60*1000); OPT.ptimer=setInterval(async()=>{ if (!drbKey()) return; await posFetch(); optDraw(); posDraw() }, 60*1000) }
   optRefresh().then(optFit);
 }
 function optOff(){
@@ -1482,8 +1491,8 @@ function posDialog(){
   $('#dkSave').onclick=async()=>{ const id=$('#dkId').value.trim(), sec=$('#dkSec').value.trim(); if (!id||!sec) return toast('Vpiši oba');
     LS.set('drbKey',{id,secret:sec}); await posFetch();
     if (POS.err){ LS.set('drbKey',null); toast('Ključ ne deluje: '+POS.err); return }
-    toast('✅ Povezano – pozicij: '+POS.list.length); closeModal(); if (OPT.on){ posDraw(); optCardRefresh() } };
-  const o=$('#dkOut'); if (o) o.onclick=e=>{ e.preventDefault(); LS.set('drbKey',null); POS.list=[]; chart.removeOverlay({groupId:'pos'}); closeModal(); optCardRefresh(); toast('Ključ izbrisan') };
+    toast('✅ Povezano – pozicij: '+POS.list.length); closeModal(); if (OPT.on){ optDraw(); posDraw(); optFit() } };
+  const o=$('#dkOut'); if (o) o.onclick=e=>{ e.preventDefault(); LS.set('drbKey',null); POS.list=[]; chart.removeOverlay({groupId:'pos'}); closeModal(); if (OPT.on) optDraw(); else optCardRefresh(); toast('Ključ izbrisan') };
 }
 
 /* ---------- tipkovnica ---------- */
