@@ -117,7 +117,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #dtb button{height:32px;padding:0 8px}
 #dtb .sw{width:18px;height:18px;border-radius:3px;border:1px solid #fff4}
 #toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);background:var(--pop);padding:8px 14px;border-radius:6px;display:none;z-index:60;box-shadow:0 4px 18px #000a}
-#optCard{position:absolute;right:70px;top:8px;z-index:20;background:rgba(19,23,34,0.92);border:1px solid #2a2a2a;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;max-width:330px;box-shadow:0 4px 14px #0008}
+#optCard{position:absolute;right:70px;top:8px;z-index:20;background:rgba(19,23,34,0.92);border:1px solid #2a2a2a;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;max-width:360px;box-shadow:0 4px 14px #0008}
 #optCard .oh{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
 #optCard .oh button{padding:2px 6px;font-size:14px}
 #optCard.min>*:not(.oh){display:none}
@@ -127,6 +127,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 #optCard table{border-collapse:collapse;margin:4px 0 2px;font-variant-numeric:tabular-nums}
 #optCard th{color:#9598a1;font-weight:400;text-align:left;padding:0 8px 0 0;font-size:11px}
 #optCard td{padding:0 8px 0 0;white-space:nowrap}
+#optCard tr.pexp td{color:#8a8a8a;font-size:11px;padding-bottom:3px;white-space:normal}
 #app.optmode #optBtn{background:#2962ff;color:#fff}
 @media(max-width:900px){#optCard{top:6px;right:62px;font-size:11px;max-width:calc(100% - 70px);padding:6px 8px}}
 @media(max-width:390px){#chg{display:none}#symBtn{font-size:19px!important}}
@@ -1407,13 +1408,14 @@ function optCard(fr, labs){
   const rvNow = (()=>{ const r=rvFor(chart.getDataList()); return r[r.length-1] })();
   const rank = st ? (st.cur-st.min)/(st.max-st.min)*100 : null, prem = st && rvNow!=null ? st.cur-rvNow : null;
   const lvl = st==null ? '—' : st.pct>=70 ? '<b style="color:#f23645">VISOKA</b>' : st.pct<=30 ? '<b style="color:#089981">NIZKA</b>' : '<b style="color:#ffb74d">SREDNJA</b>';
-  const rows = fr.filter(e=>labs.has(e.code)).map(e=>{ const s=e.atm/100*Math.sqrt(e.days/365), d=new Date(e.ts);
-    return '<tr><td>'+(POS.list.some(x=>x.code===e.code)?'★ ':'')+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+(e.days>95?String(d.getUTCFullYear()).slice(2):'')+'</td><td>'+Math.round(e.days)+'d</td><td>'+e.atm.toFixed(1)+'%</td><td>'+kfmt(S*Math.exp(-s))+' – '+kfmt(S*Math.exp(s))+'</td></tr>' }).join('');
+  // expiryji mojih opcij so v tabeli Moje pozicije (razpon v vrstici opcije), tukaj samo ostali – brez podvajanja
+  const rows = fr.filter(e=>labs.has(e.code) && !POS.list.some(x=>x.code===e.code)).map(e=>{ const s=e.atm/100*Math.sqrt(e.days/365), d=new Date(e.ts);
+    return '<tr><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+(e.days>95?String(d.getUTCFullYear()).slice(2):'')+'</td><td>'+Math.round(e.days)+'d</td><td>'+e.atm.toFixed(1)+'%</td><td>'+kfmt(S*Math.exp(-s))+' – '+kfmt(S*Math.exp(s))+'</td></tr>' }).join('');
   c.innerHTML='<div class="oh"><b>Opcije'+(st?' · DVOL '+st.cur.toFixed(1):'')+' ▾</b></div>'+
     (st ? '<div>DVOL <b>'+st.cur.toFixed(1)+'</b> · IV je '+lvl+'</div><div class="om">IV rank '+rank.toFixed(0)+'% · percentil '+st.pct.toFixed(0)+'% (1 leto: '+st.min.toFixed(0)+'–'+st.max.toFixed(0)+')</div>' : '')+
     (rvNow!=null ? '<div>RV30 <b>'+rvNow.toFixed(1)+'</b> · premija IV−RV <b style="color:'+(prem>=0?'#089981':'#f23645')+'">'+(prem>=0?'+':'')+prem.toFixed(1)+'</b></div>' : '')+
-    '<table><tr><th>Expiry</th><th></th><th>ATM IV</th><th>±1σ (68%)</th></tr>'+rows+'</table>'+
-    '<div class="om">Modro polje = ±1σ, črtkano = ±2σ (95%) · Deribit mark IV'+(OPT.posEnd?' · ★ = expiry mojih opcij, stožec do zadnje':'')+'</div>'+posHtml();
+    (rows ? '<table><tr><th>Expiry</th><th></th><th>ATM IV</th><th>±1σ (68%)</th></tr>'+rows+'</table>' : '')+
+    '<div class="om">Modro polje = ±1σ, črtkano = ±2σ (95%) · Deribit mark IV'+(OPT.posEnd?' · stožec do expiryja moje zadnje opcije':'')+'</div>'+posHtml();
   const ps=c.querySelector('#posSet'); if (ps) ps.onclick=e=>{ e.preventDefault(); e.stopPropagation(); posDialog() };
   c.querySelector('.oh').onclick=()=>{ c.classList.toggle('min'); LS.set('optMin', c.classList.contains('min')) };
   c.classList.toggle('min', !!LS.get('optMin', isM()));
@@ -1496,8 +1498,9 @@ function posHtml(){
   const frows=POS.fut.map(f=>{ D+=f.delta||0; pl+=f.plUsd||0; plb+=f.plBtc||0;
     return '<tr><td style="color:#2962ff">'+(f.size<0?'S ':'L ')+(f.lin?'PERP USDC':'PERP')+'</td><td>—</td><td>'+fmt(Math.abs(f.btc),3)+(f.lin?'':'<br><span class="om">$'+fmt(Math.abs(f.size),0)+'</span>')+'</td><td>'+fmt(f.average_price,0)+'→'+fmt(f.mark_price,0)+'</td><td style="color:'+((f.plUsd||0)>=0?'#089981':'#f23645')+'">'+(f.lin?fmt(f.plUsd,0):f.plBtc.toFixed(4)+' ₿<br><span class="om">≈'+usd(f.plUsd)+'</span>')+'</td></tr>' }).join('');
   const rows=POS.list.map(x=>{ D+=x.delta||0; G+=x.gamma||0; T+=x.theta||0; V+=x.vega||0; pl+=x.plUsd||0; plb+=x.plBtc||0; const d=new Date(x.exp);
+    const e=S && OPT.exp ? OPT.exp.find(o=>o.code===x.code) : null, sg=e ? e.atm/100*Math.sqrt(Math.max(e.days,0)/365) : 0;
     const mk=x.lin ? x.mark_price : x.mark_price*x.index_price;
-    return '<tr><td style="color:'+(x.cp==='P'?'#f23645':'#089981')+'">'+(x.size<0?'S ':'L ')+x.cp+' '+kfmt(x.K)+'</td><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.</td><td>'+Math.abs(x.size)+'</td><td>$'+fmt(x.average_price_usd,0)+'→'+fmt(mk,0)+'</td><td style="color:'+((x.plUsd||0)>=0?'#089981':'#f23645')+'">'+(x.lin?fmt(x.plUsd,0):x.plBtc.toFixed(4)+' ₿<br><span class="om">≈'+usd(x.plUsd)+'</span>')+'</td></tr>' }).join('');
+    return '<tr><td style="color:'+(x.cp==='P'?'#f23645':'#089981')+'">'+(x.size<0?'S ':'L ')+x.cp+' '+kfmt(x.K)+'</td><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.</td><td>'+Math.abs(x.size)+'</td><td>$'+fmt(x.average_price_usd,0)+'→'+fmt(mk,0)+'</td><td style="color:'+((x.plUsd||0)>=0?'#089981':'#f23645')+'">'+(x.lin?fmt(x.plUsd,0):x.plBtc.toFixed(4)+' ₿<br><span class="om">≈'+usd(x.plUsd)+'</span>')+'</td></tr>'+(e?'<tr class="pexp"><td colspan="5">↳ pričakovano ±1σ: <b>'+kfmt(S*Math.exp(-sg))+' – '+kfmt(S*Math.exp(sg))+'</b> · '+Math.round(e.days)+'d · IV '+e.atm.toFixed(0)+'%</td></tr>':'') }).join('');
   return '<div class="oh2"><b>Moje pozicije</b> <span class="om">(Deribit, samo branje)</span></div><table><tr><th>Pozicija</th><th>Exp</th><th>Kol.</th><th>Avg $ → zdaj</th><th>PNL</th></tr>'+frows+rows+'</table>'+
     '<div>Δ <b>'+D.toFixed(3)+'</b> · Γ <b>'+G.toFixed(5)+'</b> · Θ <b>'+T.toFixed(1)+'</b> · ν <b>'+V.toFixed(1)+'</b> · PNL <b style="color:'+(pl>=0?'#089981':'#f23645')+'">'+(plb?plb.toFixed(4)+' ₿ ≈ ':'')+usd(pl)+'</b></div>'+
     '<div class="om">'+(POS.fut.length?'Modra vodoravna = vstop PERP (avg price). PNL = kot stolpec PNL na Deribitu (od odprtja pozicije), ≈$ po trenutnem indeksu. Δ vključuje PERP. ':'')+'Polna črta = strike do expiryja, črtkana = break-even. Greeks kot jih vrne Deribit (vsota).</div>';
