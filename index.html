@@ -1437,13 +1437,17 @@ function optOff(){
   const c=$('#optCard'); if (c) c.remove();
 }
 /* ---------- moje Deribit pozicije (ključ samo za branje, shranjen samo v tem brskalniku) ---------- */
-const POS = {list:[], err:null, t:0};
+const POS = {list:[], fut:[], err:null, t:0};
 const drbKey = () => LS.get('drbKey', null);
 async function posFetch(){
-  const k=drbKey(); if (!k) { POS.list=[]; return }
+  const k=drbKey(); if (!k) { POS.list=[]; POS.fut=[]; return }
   try {
     const a = await rpc('public/auth',{grant_type:'client_credentials', client_id:k.id, client_secret:k.secret});
-    const r = await rpc('private/get_positions',{currency:'any', kind:'option', access_token:a.access_token});
+    const [r, rf] = await Promise.all([rpc('private/get_positions',{currency:'any', kind:'option', access_token:a.access_token}),
+      rpc('private/get_positions',{currency:'any', kind:'future', access_token:a.access_token})]);
+    // perpetual (BTC-PERPETUAL = inverse, size v USD, P&L v BTC; BTC_USDC-PERPETUAL = linear, P&L v USDC)
+    POS.fut = (rf||[]).filter(x=>x.size && Math.abs(x.size)>1e-9 && /^BTC(_USDC)?-PERPETUAL$/.test(x.instrument_name)).map(x=>{ const lin=x.instrument_name!=='BTC-PERPETUAL';
+      return {...x, lin, plUsd: lin ? x.floating_profit_loss : (x.floating_profit_loss||0)*(x.index_price||x.mark_price), btc: x.size_currency!=null ? x.size_currency : (lin ? x.size : x.size/x.mark_price)} });
     POS.list = (r||[]).filter(x=>x.size && Math.abs(x.size)>1e-9 && /^BTC(_USDC)?-/.test(x.instrument_name)).map(x=>{ const p=x.instrument_name.split('-');
       return {...x, lin:p[0]!=='BTC', exp:expTs(p[1]), code:p[1], K:+p[2], cp:p[3]} }).sort((a,b)=>a.exp-b.exp||a.K-b.K);
     POS.err=null; POS.t=Date.now();
@@ -1461,8 +1465,21 @@ reg({ name:'posLines', totalStep:2, needDefaultPointFigure:false,
     return figs;
   }
 });
+// vstopna črta perpetuala: vodoravna čez cel graf, barva/debelina kot Lukova vodoravna črta na BTCUSD (#2962ff, 2)
+reg({ name:'perpLine', totalStep:2, needDefaultPointFigure:false,
+  createPointFigures: ({chart, overlay, bounding}) => { const d=overlay.extendData; if (!d) return [];
+    const r=chart.convertToPixel([{timestamp:d.t, value:d.p}],{paneId:'candle_pane'}); const y=(Array.isArray(r)?r[0]:r).y, W=bounding.width;
+    return [{type:'line', attrs:{coordinates:[{x:0,y},{x:W,y}]}, styles:{color:'#2962ff', size:2, style:'solid'}, ignoreEvent:true},
+      {type:'text', attrs:{x:4, y:y-3, text:d.txt, align:'left', baseline:'bottom'}, styles:{color:'#fff', size:11, backgroundColor:'#2962ff', borderRadius:2, paddingLeft:4, paddingRight:4, paddingTop:2, paddingBottom:2}, ignoreEvent:true}] },
+  createYAxisFigures: ({chart, overlay, bounding}) => { const d=overlay.extendData; if (!d) return [];
+    const r=chart.convertToPixel([{timestamp:d.t, value:d.p}],{paneId:'candle_pane'}); const y=(Array.isArray(r)?r[0]:r).y;
+    return [{type:'text', attrs:{x:0, y, text:fmt(d.p,1), align:'left', baseline:'middle'}, styles:{color:'#fff', size:12, backgroundColor:'#2962ff', borderRadius:2, paddingLeft:4, paddingRight:4, paddingTop:3, paddingBottom:3}, ignoreEvent:true}] }
+});
 function posDraw(){
-  chart.removeOverlay({groupId:'pos'}); const L=chart.getDataList(); if (!L.length || !POS.list.length) return;
+  chart.removeOverlay({groupId:'pos'}); const L=chart.getDataList(); if (!L.length) return;
+  for (const f of POS.fut) chart.createOverlay({name:'perpLine', groupId:'pos', lock:true, points:[{timestamp:L[L.length-1].timestamp, value:f.average_price},{timestamp:L[L.length-1].timestamp, value:f.average_price}],
+    extendData:{t:L[L.length-1].timestamp, p:f.average_price, txt:'PERP '+(f.size<0?'S ':'L ')+fmt(Math.abs(f.btc),3)+' BTC @ '+fmt(f.average_price,1)+' · P&L $'+fmt(f.plUsd,0)}});
+  if (!POS.list.length) return;
   const last=L[L.length-1];
   const list=POS.list.map(x=>({exp:x.exp, K:x.K, cp:x.cp, size:x.size, be: x.average_price_usd!=null ? (x.cp==='P' ? x.K-x.average_price_usd : x.K+x.average_price_usd) : null}));
   chart.createOverlay({name:'posLines', groupId:'pos', lock:true, points:[{timestamp:last.timestamp, value:last.close},{timestamp:last.timestamp, value:last.close}], extendData:{t0:last.timestamp, list}});
@@ -1470,14 +1487,16 @@ function posDraw(){
 function posHtml(){
   if (!drbKey()) return '<div class="om" style="margin-top:4px">Moje pozicije: <a href="#" id="posSet" style="color:#82a6ff">poveži Deribit (samo branje)</a></div>';
   if (POS.err) return '<div class="om" style="margin-top:4px;color:#f23645">Deribit: '+esc(POS.err)+' · <a href="#" id="posSet" style="color:#82a6ff">ključ</a></div>';
-  if (!POS.list.length) return '<div class="om" style="margin-top:4px">Ni odprtih opcij.</div>';
+  if (!POS.list.length && !POS.fut.length) return '<div class="om" style="margin-top:4px">Ni odprtih pozicij.</div>';
   const S=OPT.S||0; let D=0,G=0,T=0,V=0, pl=0;
+  const frows=POS.fut.map(f=>{ D+=f.delta||0; pl+=f.plUsd||0;
+    return '<tr><td style="color:#2962ff">'+(f.size<0?'S ':'L ')+(f.lin?'PERP USDC':'PERP')+'</td><td>—</td><td>'+fmt(Math.abs(f.btc),3)+(f.lin?'':'<br><span class="om">$'+fmt(Math.abs(f.size),0)+'</span>')+'</td><td>'+fmt(f.average_price,0)+'→'+fmt(f.mark_price,0)+'</td><td style="color:'+((f.plUsd||0)>=0?'#089981':'#f23645')+'">'+fmt(f.plUsd,0)+'</td></tr>' }).join('');
   const rows=POS.list.map(x=>{ D+=x.delta||0; G+=x.gamma||0; T+=x.theta||0; V+=x.vega||0; pl+=x.floating_profit_loss_usd||0; const d=new Date(x.exp);
     const mk=x.lin ? x.mark_price : x.mark_price*x.index_price;
     return '<tr><td style="color:'+(x.cp==='P'?'#f23645':'#089981')+'">'+(x.size<0?'S ':'L ')+x.cp+' '+kfmt(x.K)+'</td><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.</td><td>'+Math.abs(x.size)+'</td><td>$'+fmt(x.average_price_usd,0)+'→'+fmt(mk,0)+'</td><td style="color:'+((x.floating_profit_loss_usd||0)>=0?'#089981':'#f23645')+'">'+fmt(x.floating_profit_loss_usd,0)+'</td></tr>' }).join('');
-  return '<div class="oh2"><b>Moje pozicije</b> <span class="om">(Deribit, samo branje)</span></div><table><tr><th>Opcija</th><th>Exp</th><th>Kol.</th><th>Prem. $ → zdaj</th><th>P&L $</th></tr>'+rows+'</table>'+
+  return '<div class="oh2"><b>Moje pozicije</b> <span class="om">(Deribit, samo branje)</span></div><table><tr><th>Pozicija</th><th>Exp</th><th>Kol.</th><th>Avg $ → zdaj</th><th>P&L $</th></tr>'+frows+rows+'</table>'+
     '<div>Δ <b>'+D.toFixed(3)+'</b> · Γ <b>'+G.toFixed(5)+'</b> · Θ <b>'+T.toFixed(1)+'</b> · ν <b>'+V.toFixed(1)+'</b> · P&L <b style="color:'+(pl>=0?'#089981':'#f23645')+'">$'+fmt(pl,0)+'</b></div>'+
-    '<div class="om">Polna črta = strike do expiryja, črtkana = break-even. Greeks kot jih vrne Deribit (vsota).</div>';
+    '<div class="om">'+(POS.fut.length?'Modra vodoravna = vstop PERP (avg price). Δ vključuje PERP. ':'')+'Polna črta = strike do expiryja, črtkana = break-even. Greeks kot jih vrne Deribit (vsota).</div>';
 }
 function posDialog(){
   const k=drbKey();
@@ -1491,8 +1510,8 @@ function posDialog(){
   $('#dkSave').onclick=async()=>{ const id=$('#dkId').value.trim(), sec=$('#dkSec').value.trim(); if (!id||!sec) return toast('Vpiši oba');
     LS.set('drbKey',{id,secret:sec}); await posFetch();
     if (POS.err){ LS.set('drbKey',null); toast('Ključ ne deluje: '+POS.err); return }
-    toast('✅ Povezano – pozicij: '+POS.list.length); closeModal(); if (OPT.on){ optDraw(); posDraw(); optFit() } };
-  const o=$('#dkOut'); if (o) o.onclick=e=>{ e.preventDefault(); LS.set('drbKey',null); POS.list=[]; chart.removeOverlay({groupId:'pos'}); closeModal(); if (OPT.on) optDraw(); else optCardRefresh(); toast('Ključ izbrisan') };
+    toast('✅ Povezano – pozicij: '+(POS.list.length+POS.fut.length)); closeModal(); if (OPT.on){ optDraw(); posDraw(); optFit() } };
+  const o=$('#dkOut'); if (o) o.onclick=e=>{ e.preventDefault(); LS.set('drbKey',null); POS.list=[]; POS.fut=[]; chart.removeOverlay({groupId:'pos'}); closeModal(); if (OPT.on) optDraw(); else optCardRefresh(); toast('Ključ izbrisan') };
 }
 
 /* ---------- tipkovnica ---------- */
