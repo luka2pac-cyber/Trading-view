@@ -23,16 +23,6 @@
    "ref": 60002.17
   },
   {
-   "id": "TEST1",
-   "sym": "BTCUSD",
-   "price": 1000,
-   "op": "above",
-   "note": "Testni alarm (Claude) – sistem deluje",
-   "status": "triggered",
-   "created": 1795619547804,
-   "triggered": 1795620837510
-  },
-  {
    "id": "1Y9U6U",
    "sym": "XAUUSD",
    "price": 3405.02,
@@ -41,6 +31,16 @@
    "status": "active",
    "created": 1795694336988,
    "ref": 3594.4
+  },
+  {
+   "id": "TEST1",
+   "sym": "BTCUSD",
+   "price": 1000,
+   "op": "above",
+   "note": "Testni alarm (Claude) – sistem deluje",
+   "status": "triggered",
+   "created": 1795619547804,
+   "triggered": 1795620837510
   }
  ],
  "bot": "luka_charts_alarm_bot"
