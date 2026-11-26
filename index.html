@@ -342,6 +342,8 @@ const symOf = id => SYM[id] || addSym({id, src:'deribit', inst:id}, 'Deribit');
 let inds0 = LS.get('inds2', null);
 if (!inds0) inds0 = (LS.get('inds',['VOL'])||[]).map(n=>({name:n}));
 if (!LS.get('indsV3',false)){ inds0 = [{name:'LMA'},{name:'LVOL'},{name:'RSIMFI'}, ...inds0.filter(o=>!['VOL','LMA','LVOL','RSIMFI','MA','EMA'].includes(o.name))]; LS.set('inds2',inds0); LS.set('indsV3',true) }
+// enkrat samodejno vklopi Std Dev kanal (potem ga lahko odstraniš in ostane odstranjen)
+if (!LS.get('indsSTD',false)){ if (!inds0.some(o=>o.name==='STDCH')) inds0.push({name:'STDCH'}); LS.set('inds2',inds0); LS.set('indsSTD',true) }
 let state = {
   sym: LS.get('sym2','BTCUSD'),
   tf: (tfOf(LS.get('tf','D'))||tfOf('D')).k, // zadnji izbrani interval (gumbi All/5Y ga ne shranijo)
