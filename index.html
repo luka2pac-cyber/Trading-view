@@ -311,6 +311,9 @@ const fmt = (v, pp) => v==null||isNaN(v) ? '—' : Number(v).toLocaleString('en-
 const ppFor = v => v==null ? 2 : Math.abs(v) < 5 ? 4 : Math.abs(v) < 50 ? 3 : 2;
 const agoTxt = ms => { const m=Math.round((Date.now()-ms)/6e4); return m<1?'pravkar':m<60?m+' min nazaj':m<1440?Math.round(m/60)+' h nazaj':Math.round(m/1440)+' dni nazaj' };
 const hexA = (h, a) => { const n=parseInt(h.slice(1),16); return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+(a/100)+')' };
+const p2 = n => String(n).padStart(2,'0');
+const dmyU = (ts, time) => { const d=new Date(ts); return p2(d.getUTCDate())+'/'+p2(d.getUTCMonth()+1)+'/'+String(d.getUTCFullYear()).slice(2) }; // expiryji (UTC)
+const dmyL = ts => { const d=new Date(ts), o=new Intl.DateTimeFormat('en-GB',{timeZone:LS.get('tz','Europe/Ljubljana'),day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}); return o.format(d).replace(',','') };
 const SV = p => '<svg class="i" viewBox="0 0 24 24">'+p+'</svg>';
 
 /* ---------- intervali ---------- */
@@ -612,7 +615,7 @@ klinecharts.registerIndicator({
     const H=bounding.height*0.22, base=bounding.height, w=Math.max(1, bs.gapBar);
     for (let i=from;i<to;i++){ const d=r[i]; const x=xAxis.convertToPixel(i), h=d.vol/mx*H;
       ctx.fillStyle = d.up ? 'rgba(8,153,129,0.24)' : 'rgba(242,54,69,0.24)'; ctx.fillRect(x-w/2, base-h, w, h) }
-    ctx.strokeStyle='#ffffff'; ctx.lineWidth=1; ctx.beginPath(); let st=false;
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=1; ctx.setLineDash([]); ctx.beginPath(); let st=false;
     for (let i=from;i<to;i++){ const m=r[i].ma; if (m==null) continue; const x=xAxis.convertToPixel(i), y=base-m/mx*H; st ? ctx.lineTo(x,y) : ctx.moveTo(x,y); st=true }
     ctx.stroke(); return true;
   },
@@ -620,6 +623,8 @@ klinecharts.registerIndicator({
     return legend('Vol', ' '+indicator.calcParams[0], [['',bigN(d.vol), d.up?'#089981':'#f23645'],['',bigN(d.ma),'#ffffff']], [eyeFeat(indicator.visible!==false)]) }
 });
 // 1b) Podaljšane seje (kot TV): pre-market (4:00–9:30 NY) oranžno, post-market (16:00–20:00 NY) modro ozadje; samo US delnice/ETF na 15m in 1h
+// zadnja pre/post cena ostane vidna, dokler ne začne novo redno trgovanje (robot jo pošlje samo, ko je zadnja sveča izven 9:30–16:00) – tudi čez vikend/praznik, kot TV
+const EXT_MAX = 5*864e5;
 const NYF = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'numeric',hourCycle:'h23'});
 const nyMin = ts => { const p=NYF.formatToParts(new Date(ts)); return (+p.find(x=>x.type==='hour').value)*60 + (+p.find(x=>x.type==='minute').value) };
 const sessOf = ts => { const m=nyMin(ts); return m<570 ? 'pre' : m>=960 ? 'post' : '' };
@@ -754,6 +759,9 @@ klinecharts.registerIndicator({
 const yAxes = () => { try { return chart.getDrawPaneById('candle_pane').getYAxisComponents() } catch(e){ return [] } };
 function yAuto(on){ yAxes().forEach(a=>a.setAutoCalcTickFlag(on)); if (on) try{ chart.layout({measureWidth:true, update:true, buildYAxisTick:true}) }catch(e){} }
 const chart = klinecharts.init('k', {styles:'dark', timezone: state.tz, locale:'en-US'});
+// datumi povsod v obliki dan/mesec/leto (os, križec, legenda)
+const dmyTpl = t => t.replace('YYYY-MM-DD','DD/MM/YYYY').replace('MM-DD','DD/MM').replace('YYYY-MM','MM/YYYY');
+chart.setFormatter({formatDate: p => klinecharts.utils.formatDate(p.dateTimeFormat, p.timestamp, dmyTpl(p.template))});
 window.__lc = () => ({chart, state});
 // mehkejši zoom s kolescem/touchpadom (privzeti je bil prehiter, posebej na touchpadu in v Firefoxu)
 $('#k').addEventListener('wheel', e => {
@@ -799,7 +807,7 @@ function headerPrice(){
   $('#symName').textContent = s.id; $('#price').textContent = fmt(q.last, q.pp); $('#cur').textContent = curOf(s);
   const c=$('#chg'); c.textContent = q.chg==null?'':(q.chg>=0?'+':'')+q.chg.toFixed(2)+'%'; c.className = q.chg==null?'':q.chg>=0?'up':'dn';
   { const e=s.src==='yahoo' && (META.symbols[s.id]||{}).ext, hx=$('#hx');
-    hx.innerHTML = e && e.p!=null && Date.now()-e.t < 20*3600e3 ? (e.s==='pre'?'☀ Pre ':'☾ Post ')+fmt(e.p, q.pp)+' <span class="'+(e.chg>=0?'up':'dn')+'">'+(e.chg>=0?'+':'')+e.chg.toFixed(2)+'%</span>' : '' }
+    hx.innerHTML = e && e.p!=null && Date.now()-e.t < EXT_MAX ? (e.s==='pre'?'☀ Pre ':'☾ Post ')+fmt(e.p, q.pp)+' <span class="'+(e.chg>=0?'up':'dn')+'">'+(e.chg>=0?'+':'')+e.chg.toFixed(2)+'%</span>' : '' }
   if (q.last!=null) document.title = fmt(q.last,q.pp)+' · '+s.id;
 }
 function updateStatus(){
@@ -1316,7 +1324,7 @@ function paintRow(id){
   const a = r.querySelector('.a'); if (a){ const ab = (q.last!=null && q.chg!=null) ? q.last - q.last/(1+q.chg/100) : null;
     a.textContent = ab==null ? '' : (ab>=0?'+':'−')+fmt(Math.abs(ab), q.pp); a.className='a '+(ab==null?'':ab>=0?'up':'dn') }
   const x = r.querySelector('.x'); if (x){ const e=(META.symbols[id]||{}).ext;
-    if (e && e.p!=null && Date.now()-e.t < 20*3600e3){ x.innerHTML='<span class="xs">'+(e.s==='pre'?'☀ Pre':'☾ Post')+'</span> '+fmt(e.p, q.pp)+' <span class="'+(e.chg>=0?'up':'dn')+'">'+(e.chg>=0?'+':'−')+Math.abs(e.chg).toFixed(2)+'%</span>'; x.style.display='' }
+    if (e && e.p!=null && Date.now()-e.t < EXT_MAX){ x.innerHTML='<span class="xs">'+(e.s==='pre'?'☀ Pre':'☾ Post')+'</span> '+fmt(e.p, q.pp)+' <span class="'+(e.chg>=0?'up':'dn')+'">'+(e.chg>=0?'+':'−')+Math.abs(e.chg).toFixed(2)+'%</span>'; x.style.display='' }
     else { x.textContent=''; x.style.display='none' } }
 }
 function markSel(){ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel', r.dataset.id===state.sym)) }
@@ -1482,7 +1490,7 @@ function optDraw(){
   fr.filter(e=>pc.has(e.code)).forEach(e=>labs.add(e.code)); OPT.posEnd=pEnd>now ? pEnd : 0;
   const nodes=fr.map(e=>{ const s=e.atm/100*Math.sqrt(e.days/365); const d=new Date(e.ts);
     return {ts:e.ts, u1:S*Math.exp(s), l1:S*Math.exp(-s), u2:S*Math.exp(2*s), l2:S*Math.exp(-2*s), pct:(Math.exp(s)-1)*100,
-      lab: labs.has(e.code) ? (pc.has(e.code)?'★ ':'')+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+(e.days>95?String(d.getUTCFullYear()).slice(2):'') : null} });
+      lab: labs.has(e.code) ? (pc.has(e.code)?'★ ':'')+dmyU(e.ts) : null} });
   const nr=nodes.filter((n,i)=>fr[i].days<=35 || pc.has(fr[i].code)); const rr=nr.length?nr:nodes.slice(0,1); OPT.rng=[Math.max(...rr.map(n=>n.u1))*1.02, Math.min(...rr.map(n=>n.l1))*0.98];
   chart.removeIndicator({name:'OPTRNG', paneId:'candle_pane'}); chart.createIndicator({name:'OPTRNG', paneId:'candle_pane'}, true);
   chart.removeOverlay({groupId:'opt'});
@@ -1500,7 +1508,7 @@ function optCard(fr, labs){
   const lvl = st==null ? '—' : st.pct>=70 ? '<b style="color:#f23645">VISOKA</b>' : st.pct<=30 ? '<b style="color:#089981">NIZKA</b>' : '<b style="color:#ffb74d">SREDNJA</b>';
   // expiryji mojih opcij so v tabeli Moje pozicije (razpon v vrstici opcije), tukaj samo ostali – brez podvajanja
   const rows = fr.filter(e=>labs.has(e.code) && !POS.list.some(x=>x.code===e.code)).map(e=>{ const s=e.atm/100*Math.sqrt(e.days/365), d=new Date(e.ts);
-    return '<tr><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+(e.days>95?String(d.getUTCFullYear()).slice(2):'')+'</td><td>'+Math.round(e.days)+'d</td><td>'+e.atm.toFixed(1)+'%</td><td>'+kfmt(S*Math.exp(-s))+' – '+kfmt(S*Math.exp(s))+'</td></tr>' }).join('');
+    return '<tr><td>'+dmyU(e.ts)+'</td><td>'+Math.round(e.days)+'d</td><td>'+e.atm.toFixed(1)+'%</td><td>'+kfmt(S*Math.exp(-s))+' – '+kfmt(S*Math.exp(s))+'</td></tr>' }).join('');
   c.innerHTML='<div class="oh"><b>Opcije'+(st?' · DVOL '+st.cur.toFixed(1):'')+' ▾</b></div>'+
     (st ? '<div>DVOL <b>'+st.cur.toFixed(1)+'</b> · IV je '+lvl+'</div><div class="om">IV rank '+rank.toFixed(0)+'% · percentil '+st.pct.toFixed(0)+'% (1 leto: '+st.min.toFixed(0)+'–'+st.max.toFixed(0)+')</div>' : '')+
     (rvNow!=null ? '<div>RV30 <b>'+rvNow.toFixed(1)+'</b> · premija IV−RV <b style="color:'+(prem>=0?'#089981':'#f23645')+'">'+(prem>=0?'+':'')+prem.toFixed(1)+'</b></div>' : '')+
@@ -1575,8 +1583,8 @@ reg({ name:'perpLine', totalStep:2, needDefaultPointFigure:false,
 reg({ name:'extLine', totalStep:2, needDefaultPointFigure:false,
   createPointFigures: ({chart, overlay, bounding}) => { const d=overlay.extendData; if (!d) return [];
     const r=chart.convertToPixel([{timestamp:d.t, value:d.p}],{paneId:'candle_pane'}); const y=(Array.isArray(r)?r[0]:r).y;
-    return [{type:'line', attrs:{coordinates:[{x:0,y},{x:bounding.width,y}]}, styles:{color:d.c, size:1, style:'dashed', dashedValue:[2,2]}, ignoreEvent:true},
-      {type:'text', attrs:{x:bounding.width-4, y:y-2, text:d.txt+' '+d.pt, align:'right', baseline:'bottom'}, styles:{color:'#fff', size:11, backgroundColor:d.c, borderRadius:2, paddingLeft:4, paddingRight:4, paddingTop:2, paddingBottom:2}, ignoreEvent:true}] },
+    return [{type:'line', attrs:{coordinates:[{x:0,y},{x:bounding.width,y}]}, styles:{color:d.c, size:1, style:'dashed', dashedValue:[1,3]}, ignoreEvent:true},
+      {type:'text', attrs:{x:bounding.width-1, y:(()=>{ const r2=chart.convertToPixel([{timestamp:d.t, value:d.last}],{paneId:'candle_pane'}); const yl=(Array.isArray(r2)?r2[0]:r2).y; return Math.abs(y-yl)<19 ? yl+(y>=yl?19:-19) : y })(), text:d.txt, align:'right', baseline:'middle'}, styles:{color:'#fff', size:11, backgroundColor:d.c, borderRadius:2, paddingLeft:4, paddingRight:4, paddingTop:3, paddingBottom:3}, ignoreEvent:true}] },
   createYAxisFigures: ({chart, overlay}) => { const d=overlay.extendData; if (!d) return [];
     const P=v=>{ const r=chart.convertToPixel([{timestamp:d.t, value:v}],{paneId:'candle_pane'}); return (Array.isArray(r)?r[0]:r).y };
     let y=P(d.p); const yl=P(d.last); if (Math.abs(y-yl)<19) y = yl + (y>=yl?19:-19); // ne prekrij oznake zadnje cene
@@ -1584,9 +1592,9 @@ reg({ name:'extLine', totalStep:2, needDefaultPointFigure:false,
 });
 function extDraw(){
   chart.removeOverlay({groupId:'ext'}); const s=symOf(state.sym); if (!isUsSym(s)) return;
-  const e=(META.symbols[s.id]||{}).ext, L=chart.getDataList(); if (!e || e.p==null || Date.now()-e.t >= 20*3600e3 || !L.length) return;
+  const e=(META.symbols[s.id]||{}).ext, L=chart.getDataList(); if (!e || e.p==null || Date.now()-e.t >= EXT_MAX || !L.length) return;
   const t=L[L.length-1].timestamp, c = e.s==='pre' ? '#ff9800' : '#2962ff', pp=(chart.getSymbol()||{}).pricePrecision??2;
-  chart.createOverlay({name:'extLine', groupId:'ext', lock:true, points:[{timestamp:t, value:e.p},{timestamp:t, value:e.p}], extendData:{t, p:e.p, c, last:L[L.length-1].close, pt:fmt(e.p,pp), txt:(e.s==='pre'?'☀ Pre':'☾ Post')}});
+  chart.createOverlay({name:'extLine', groupId:'ext', lock:true, points:[{timestamp:t, value:e.p},{timestamp:t, value:e.p}], extendData:{t, p:e.p, c, last:L[L.length-1].close, pt:fmt(e.p,pp), txt:(e.s==='pre'?'Pre':'Post')}});
 }
 function posDraw(){
   chart.removeOverlay({groupId:'pos'}); const L=chart.getDataList(); if (!L.length) return;
@@ -1607,7 +1615,7 @@ function posHtml(){
   const rows=POS.list.map(x=>{ D+=x.delta||0; G+=x.gamma||0; T+=x.theta||0; V+=x.vega||0; pl+=x.plUsd||0; plb+=x.plBtc||0; const d=new Date(x.exp);
     const e=S && OPT.exp ? OPT.exp.find(o=>o.code===x.code) : null, sg=e ? e.atm/100*Math.sqrt(Math.max(e.days,0)/365) : 0;
     const mk=x.lin ? x.mark_price : x.mark_price*x.index_price;
-    return '<tr><td style="color:'+(x.cp==='P'?'#f23645':'#089981')+'">'+(x.size<0?'S ':'L ')+x.cp+' '+kfmt(x.K)+'</td><td>'+d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.</td><td>'+Math.abs(x.size)+'</td><td>$'+fmt(x.average_price_usd,0)+'→'+fmt(mk,0)+'</td><td style="color:'+((x.plUsd||0)>=0?'#089981':'#f23645')+'">'+(x.lin?fmt(x.plUsd,0):x.plBtc.toFixed(4)+' ₿<br><span class="om">≈'+usd(x.plUsd)+'</span>')+'</td></tr>'+(e?'<tr class="pexp"><td colspan="5">↳ pričakovano ±1σ: <b>'+kfmt(S*Math.exp(-sg))+' – '+kfmt(S*Math.exp(sg))+'</b> · '+Math.round(e.days)+'d · IV '+e.atm.toFixed(0)+'%</td></tr>':'') }).join('');
+    return '<tr><td style="color:'+(x.cp==='P'?'#f23645':'#089981')+'">'+(x.size<0?'S ':'L ')+x.cp+' '+kfmt(x.K)+'</td><td>'+dmyU(x.exp)+'</td><td>'+Math.abs(x.size)+'</td><td>$'+fmt(x.average_price_usd,0)+'→'+fmt(mk,0)+'</td><td style="color:'+((x.plUsd||0)>=0?'#089981':'#f23645')+'">'+(x.lin?fmt(x.plUsd,0):x.plBtc.toFixed(4)+' ₿<br><span class="om">≈'+usd(x.plUsd)+'</span>')+'</td></tr>'+(e?'<tr class="pexp"><td colspan="5">↳ pričakovano ±1σ: <b>'+kfmt(S*Math.exp(-sg))+' – '+kfmt(S*Math.exp(sg))+'</b> · '+Math.round(e.days)+'d · IV '+e.atm.toFixed(0)+'%</td></tr>':'') }).join('');
   return '<div class="oh2"><b>Moje pozicije</b> <span class="om">(Deribit, samo branje)</span></div><table><tr><th>Pozicija</th><th>Exp</th><th>Kol.</th><th>Avg $ → zdaj</th><th>PNL</th></tr>'+frows+rows+'</table>'+
     '<div>Δ <b>'+D.toFixed(3)+'</b> · Γ <b>'+G.toFixed(5)+'</b> · Θ <b>'+T.toFixed(1)+'</b> · ν <b>'+V.toFixed(1)+'</b> · PNL <b style="color:'+(pl>=0?'#089981':'#f23645')+'">'+(plb?plb.toFixed(4)+' ₿ ≈ ':'')+usd(pl)+'</b></div>'+
     '<div class="om">'+(POS.fut.length?'Modra vodoravna = vstop PERP (avg price). PNL = kot stolpec PNL na Deribitu (od odprtja pozicije), ≈$ po trenutnem indeksu. Δ vključuje PERP. ':'')+'Polna črta = strike do expiryja, črtkana = break-even. Greeks kot jih vrne Deribit (vsota).</div>';
@@ -1730,7 +1738,7 @@ function alertDialog(){
     if (!act.length) h+='<div class="li" style="cursor:default"><small>Ni aktivnih alarmov.</small></div>';
     for (const a of act) h+='<div class="li" style="cursor:default"><div><b>'+esc(a.sym)+'</b> '+(a.op==='above'?'⬆️':'⬇️')+' '+esc(a.price)+(a.note?' <small>'+esc(a.note)+'</small>':'')+'</div><div class="act"><button data-go="'+esc(a.sym)+'">Graf</button><button data-del="'+esc(a.id)+'" title="Izbriši">✕</button></div></div>';
     const trig=ALERTS.alerts.filter(a=>a.status==='triggered').slice(-10).reverse();
-    if (trig.length){ h+='</div><div class="sec">Sproženi</div><div class="body">'; for (const a of trig) h+='<div class="li" style="cursor:default"><div><b>'+esc(a.sym)+'</b> '+esc(a.price)+'</div><small>'+(a.triggered?new Date(a.triggered).toLocaleString('sl-SI'):'')+'</small></div>' }
+    if (trig.length){ h+='</div><div class="sec">Sproženi</div><div class="body">'; for (const a of trig) h+='<div class="li" style="cursor:default"><div><b>'+esc(a.sym)+'</b> '+esc(a.price)+'</div><small>'+(a.triggered?dmyL(a.triggered):'')+'</small></div>' }
     h+='</div><div class="sec" style="text-transform:none">'+(ALERTS.connected?'✅ Telegram povezan'+(ALERTS.bot?' (@'+esc(ALERTS.bot)+')':''):'⚠️ Telegram še ni povezan – obvestila ne bodo prišla (glej navodila v pogovoru).')+' · <a href="#" id="ghOut" style="color:#787b86">odklopi aplikacijo</a></div>';
   }
   openModal(h);
