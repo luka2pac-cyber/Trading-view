@@ -1,13 +1,12 @@
 date -u
-for s in AAPL NVDA SPY; do echo "== $s"; curl -s -m 20 -A "Mozilla/5.0" "https://query1.finance.yahoo.com/v8/finance/chart/$s?interval=5m&range=2d&includePrePost=true" | python3 -c "
-import json,sys,datetime as dt,zoneinfo
-ny=zoneinfo.ZoneInfo('America/New_York'); r=json.load(sys.stdin)['chart']['result'][0]; m=r['meta']
-print('regularMarketTime', dt.datetime.fromtimestamp(m.get('regularMarketTime',0),ny), 'price', m.get('regularMarketPrice'))
-print('currentTradingPeriod', json.dumps(m.get('currentTradingPeriod'))[:300])
-q=r['indicators']['quote'][0]; ts=r['timestamp']
-rows=[(dt.datetime.fromtimestamp(t,ny),c) for t,c in zip(ts,q['close']) if c is not None]
-print('zadnje sveče:'); [print('  ',a,b) for a,b in rows[-6:]]
-"; done
-python3 -c "
-import yfinance as yf
-d=yf.download('AAPL',period='5d',interval='5m',prepost=True,progress=False,auto_adjust=False); print('yfinance AAPL 5m prepost zadnje:'); print(d.tail(4).to_string())"
+python3 - <<'P'
+import yfinance as yf, json
+for s in ["SPY","AAPL"]:
+    try:
+        i=yf.Ticker(s).info
+        print(s, {k:i.get(k) for k in ["marketState","preMarketPrice","preMarketTime","preMarketChangePercent","postMarketPrice","postMarketTime","regularMarketPrice"]})
+    except Exception as e: print(s,"info err",e)
+d=yf.download("SPY",period="1d",interval="1m",prepost=True,progress=False,auto_adjust=False); print("1m SPY", len(d)); print(d.tail(3).to_string())
+P
+for s in SPY AAPL; do echo "== nasdaq $s"; curl -s -m 15 -A "Mozilla/5.0" -H "Accept: application/json" "https://api.nasdaq.com/api/quote/$s/info?assetclass=$([ $s = SPY ] && echo etf || echo stocks)" | head -c 900; echo; done
+echo "== nasdaq extended"; curl -s -m 15 -A "Mozilla/5.0" -H "Accept: application/json" "https://api.nasdaq.com/api/quote/SPY/extended-trading?assetclass=etf&markettype=pre" | head -c 900; echo
