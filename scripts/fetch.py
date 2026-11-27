@@ -19,13 +19,13 @@ def fname(sid):
     return re.sub(r"[^A-Za-z0-9._-]", "_", sid)
 
 
-def download(tickers, interval):
-    """Vrne {ticker: DataFrame} (samo neprazne)."""
+def download(tickers, interval, prepost=False):
+    """Vrne {ticker: DataFrame} (samo neprazne). prepost=True: z US pre/post-market svečami (kot TV podaljšane seje)."""
     out = {}
     for chunk in [tickers[i:i + 25] for i in range(0, len(tickers), 25)]:
         for attempt in range(3):
             try:
-                df = yf.download(chunk, period=INTERVALS[interval], interval=interval, group_by="ticker",
+                df = yf.download(chunk, period=INTERVALS[interval], interval=interval, group_by="ticker", prepost=prepost,
                                  auto_adjust=False, actions=False, progress=False, threads=False)
                 break
             except Exception as e:  # noqa
@@ -167,12 +167,26 @@ def _yahoo_daily(t, rng="1mo"):
     return df.dropna(subset=["Open", "High", "Low", "Close"])
 
 
+def reg_only(d):
+    """Samo redno trgovanje (9:30–16:00 New York) – za dnevne sveče in zadnjo ceno (pre/post ostane samo na intraday grafu)."""
+    if d is None or d.empty:
+        return d
+    idx = d.index.tz_convert("America/New_York") if d.index.tz is not None else d.index.tz_localize("UTC").tz_convert("America/New_York")
+    m = idx.hour * 60 + idx.minute
+    return d[(m >= 570) & (m < 960)]
+
+
+PREPOST = set()  # tickerji, ki imajo v 1h/15m tudi pre/post-market sveče
+
+
 def patch_daily(data):
     """yfinance po splitu (npr. SNDK 8:1, 20. 11. 2026) zna izpustiti zadnje dnevne sveče.
     Če dnevni podatki zaostajajo za urnimi, manjkajoče dni doda iz Yahoo chart API,
     sicer jih sestavi iz urnih sveč."""
     for t, d in list(data["1d"].items()):
         intra = data["1h"].get(t)
+        if t in PREPOST:
+            intra = reg_only(intra)
         if intra is None or intra.empty or d.empty:
             continue
         last_d, last_i = _day(d.index[-1]), _day(intra.index[-1])
@@ -245,7 +259,14 @@ def main():
     items = [it for g in groups for it in g["items"] if it.get("src", "yahoo") == "yahoo"]
     # vsi kandidati + tickerji za razmerja
     want = sorted({c for it in items for c in it.get("y", [])} | {c for it in items for c in it.get("ratio", [])})
-    data = {iv: download(want, iv) for iv in INTERVALS}
+    us = [t for t in want if US_RE.match(t)]
+    rest = [t for t in want if not US_RE.match(t)]
+    data = {}
+    for iv in INTERVALS:
+        ext_iv = iv != "1d"  # US delnice/ETF: 1h in 15m s pre/post-market (4:00–20:00 NY), dnevne brez
+        data[iv] = {**download(rest, iv), **download(us, iv, prepost=ext_iv)}
+        if ext_iv:
+            PREPOST.update(data[iv].keys() & set(us))
     print("Prenešeno:", {iv: len(d) for iv, d in data.items()}, "od", len(want))
     patch_daily(data)
 
@@ -273,6 +294,9 @@ def main():
                 json.dump(to_json(df), open(os.path.join(OUT, f"{fname(sid)}_{iv}.json"), "w"), separators=(",", ":"))
             d = frames["1d"]
             latest = frames.get("15m", d)
+            if used in PREPOST and "15m" in frames:
+                r = reg_only(latest)
+                latest = r if not r.empty else d
             last = float(latest["Close"].iloc[-1])
             last_day = pd.Timestamp(latest.index[-1]).date()
             prev_rows = d[[pd.Timestamp(x).date() < last_day for x in d.index]]

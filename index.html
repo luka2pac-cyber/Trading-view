@@ -30,6 +30,8 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 .caret{font-size:9px;color:var(--mute)}
 #price{font-weight:700;font-variant-numeric:tabular-nums;padding:0 4px 0 6px}
 #chg{font-variant-numeric:tabular-nums;padding-right:6px}
+#hx{font-variant-numeric:tabular-nums;padding-right:6px;font-size:12px;color:var(--mute);white-space:nowrap}#hx:empty{display:none}
+@media(max-width:900px){#hx{display:none}}
 #cur{color:#d1d4dc;font-size:12px;font-weight:600;padding-right:6px}
 #curTag{position:absolute;top:6px;right:8px;z-index:5;pointer-events:none;font-size:12px;font-weight:600;color:#d1d4dc;background:#2a2e39;padding:2px 7px;border-radius:4px}
 #curTag:empty{display:none}
@@ -239,7 +241,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4;stro
 <div id="app">
   <div id="top">
     <button id="symBtn" title="Iskanje simbola"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><span id="symName">—</span></button>
-    <div id="mTfQ" class="monly"></div><span id="price">—</span><span id="cur"></span><span id="chg"></span>
+    <div id="mTfQ" class="monly"></div><span id="price">—</span><span id="cur"></span><span id="chg"></span><span id="hx"></span>
     <div class="vs"></div>
     <div id="tfFav" style="display:flex"></div>
     <button id="tfMore" title="Interval" data-popbtn="1"><span class="caret">▼</span></button>
@@ -365,11 +367,15 @@ let state = {
 /* ---------- Deribit WebSocket ---------- */
 const WS_URL = 'wss://www.deribit.com/ws/api/v2';
 let ws, wsReady, rid = 1, pending = {}, subs = new Map(), chartChs = new Set(), wlChs = new Set(), retry = 0, wsOk = false;
+// ko se WS ne poveže, vprašaj Deribit REST zakaj (npr. {"error":{"message":"system_maintenance","code":11051}} med vzdrževanjem)
+let drbMaint=false, drbChk=0;
+function drbCheck(){ const now=Date.now(); if (now-drbChk<20000) return; drbChk=now;
+  fetch('https://www.deribit.com/api/v2/public/test',{cache:'no-store'}).then(r=>r.json()).then(j=>{ drbMaint = !!(j && j.error && j.error.message==='system_maintenance'); updateStatus() }).catch(()=>{}) }
 function setStatus(t, cls){ $('#st').textContent=t; $('#dot').className=cls||'' }
 function connect(){
   wsReady = new Promise(res => {
     ws = new WebSocket(WS_URL);
-    ws.onopen = () => { retry=0; wsOk=true; rpc('public/set_heartbeat',{interval:30}).catch(()=>{});
+    ws.onopen = () => { retry=0; wsOk=true; drbMaint=false; rpc('public/set_heartbeat',{interval:30}).catch(()=>{});
       if (subs.size) ws.send(JSON.stringify({jsonrpc:'2.0',id:rid++,method:'public/subscribe',params:{channels:[...subs.keys()]}}));
       res(); updateStatus() };
     ws.onmessage = e => {
@@ -378,7 +384,7 @@ function connect(){
       if (m.method==='heartbeat' && m.params && m.params.type==='test_request') { rpc('public/test',{}).catch(()=>{}); return }
       if (m.method==='subscription') { const cb=subs.get(m.params.channel); if (cb) cb(m.params.data) }
     };
-    ws.onclose = () => { wsOk=false; updateStatus();
+    ws.onclose = () => { wsOk=false; drbCheck(); updateStatus();
       Object.values(pending).forEach(p=>p.rej({message:'Deribit povezava prekinjena'})); pending={};
       setTimeout(connect, Math.min(1000*2**retry++, 15000)) };
     ws.onerror = () => {};
@@ -480,7 +486,8 @@ const loader = {
       const out = state.ct==='heikin' ? heikin(rawBars).slice(0, bars.length) : bars;
       if (type==='init'){ if (!bars.length) setStatus('Ni podatkov za '+s.id,'bad'); else { headerPrice(); updateStatus() } }
       callback(out, {forward: !noMore && bars.length>0, backward:false});
-      if (type==='init') setTimeout(()=>{ restoreDrawings(); applyRange(); drawAlerts(); if (state.sym===OPT_SYM) optOn() }, 0);
+      if (type==='init') setTimeout(()=>{ if (isUsSym(s) && (tf.k==='15m' || tf.k==='1h') && bars.some(b=>sessOf(b.timestamp))){ chart.removeIndicator({name:'EXTSES', paneId:'candle_pane'}); chart.createIndicator({name:'EXTSES', paneId:'candle_pane'}, true) }
+        restoreDrawings(); applyRange(); drawAlerts(); if (state.sym===OPT_SYM) optOn() }, 0);
     } catch(e){ setStatus('Napaka: '+(e.message||e)+' ('+s.id+')','bad'); callback([], false) }
   },
   subscribeBar: ({callback}) => {
@@ -611,6 +618,26 @@ klinecharts.registerIndicator({
   },
   createTooltipDataSource: ({chart, indicator, crosshair}) => { const r=indicator.result||[]; const d=r[tipIdx(chart,crosshair,r.length)]||{};
     return legend('Vol', ' '+indicator.calcParams[0], [['',bigN(d.vol), d.up?'#089981':'#f23645'],['',bigN(d.ma),'#ffffff']], [eyeFeat(indicator.visible!==false)]) }
+});
+// 1b) Podaljšane seje (kot TV): pre-market (4:00–9:30 NY) oranžno, post-market (16:00–20:00 NY) modro ozadje; samo US delnice/ETF na 15m in 1h
+const NYF = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'numeric',hourCycle:'h23'});
+const nyMin = ts => { const p=NYF.formatToParts(new Date(ts)); return (+p.find(x=>x.type==='hour').value)*60 + (+p.find(x=>x.type==='minute').value) };
+const sessOf = ts => { const m=nyMin(ts); return m<570 ? 'pre' : m>=960 ? 'post' : '' };
+const isUsSym = s => s.src==='yahoo' && !s.ljse && /^[A-Z]{1,5}(-[A-Z])?$/.test((META.symbols[s.id]||{}).yahoo||'');
+klinecharts.registerIndicator({
+  name:'EXTSES', shortName:'', series:'price', precision:0, calcParams:[], figures:[],
+  calc: list => list.map(k=>({s:sessOf(k.timestamp)})),
+  draw: ({ctx, chart, indicator, bounding, xAxis}) => {
+    const r=indicator.result; if (!r || !r.length) return true;
+    const vr=chart.getVisibleRange(), bs=chart.getBarSpace(), from=Math.max(0,vr.from-1), to=Math.min(r.length, vr.to+1), half=bs.bar/2+bs.gapBar/2;
+    // zaporedne sveče iste seje = en pravokotnik (brez prog zaradi prekrivanja)
+    for (let i=from;i<to;){ const t=r[i].s; let j=i; while (j+1<to && r[j+1].s===t) j++;
+      if (t){ const x1=Math.round(xAxis.convertToPixel(i)-half), x2=Math.round(xAxis.convertToPixel(j)+half);
+        ctx.fillStyle = t==='pre' ? 'rgba(255,152,0,0.08)' : 'rgba(41,98,255,0.10)'; ctx.fillRect(x1, 0, x2-x1, bounding.height) }
+      i=j+1 }
+    return true;
+  },
+  createTooltipDataSource: () => ({name:'', calcParamsText:'', values:[], features:[], icons:[]})
 });
 // 2) MA-ji iz "mikul's combo indicator": EMA 10/50/200/21, SMA 7/200, Bollinger 20/2
 const LMA_LINES = [
@@ -771,12 +798,14 @@ function headerPrice(){
   const s = symOf(state.sym), q = quote(s);
   $('#symName').textContent = s.id; $('#price').textContent = fmt(q.last, q.pp); $('#cur').textContent = curOf(s);
   const c=$('#chg'); c.textContent = q.chg==null?'':(q.chg>=0?'+':'')+q.chg.toFixed(2)+'%'; c.className = q.chg==null?'':q.chg>=0?'up':'dn';
+  { const e=s.src==='yahoo' && (META.symbols[s.id]||{}).ext, hx=$('#hx');
+    hx.innerHTML = e && e.p!=null && Date.now()-e.t < 20*3600e3 ? (e.s==='pre'?'☀ Pre ':'☾ Post ')+fmt(e.p, q.pp)+' <span class="'+(e.chg>=0?'up':'dn')+'">'+(e.chg>=0?'+':'')+e.chg.toFixed(2)+'%</span>' : '' }
   if (q.last!=null) document.title = fmt(q.last,q.pp)+' · '+s.id;
 }
 function updateStatus(){
   const s = symOf(state.sym);
   if (s.src==='bitstamp') setStatus('V živo · Bitstamp (zgodovina od 2011)', 'ok');
-  else if (s.src==='deribit') setStatus(wsOk?'V živo · Deribit':'Povezujem z Deribit…', wsOk?'ok':'bad');
+  else if (s.src==='deribit') setStatus(wsOk?'V živo · Deribit':drbMaint?'Deribit: vzdrževanje sistema – grafi se vrnejo sami, ko Deribit spet dela':'Povezujem z Deribit…', wsOk?'ok':'bad');
   else { const m=META.symbols[s.id]||{};
     setStatus(m.ok ? (s.ljse ? 'Ljubljanska borza · samo dnevne sveče · zamik ~15-30 min' : 'Yahoo '+(m.yahoo||'')+' · zamik ~15-30 min')+' · posodobljeno '+agoTxt(META.updated) : 'Ni podatkov za '+s.id, m.ok?'delay':'bad') }
   $('#info').textContent = s.name;
@@ -793,7 +822,7 @@ function load(){
   const s = symOf(state.sym);
   let tf = tfOf(state.tf);
   if (!allowedTf(s, tf)){ state.tf = s.dvol ? '1h' : 'D'; tf = tfOf(state.tf) }
-  closeDtb(); selectedId=null; yAuto(true);
+  closeDtb(); selectedId=null; yAuto(true); chart.removeIndicator({name:'EXTSES', paneId:'candle_pane'});
   chart.removeOverlay({groupId:'d'});
   chart.setSymbol({ticker:s.id, pricePrecision: s.pp!=null ? s.pp : ppFor((META.symbols[s.id]||{}).last), volumePrecision: 0});
   { const c=curOf(s); chart.setStyles({candle:{tooltip:{title:{color:'#d1d4dc', template:'{ticker} · {period}'+(c?' · '+c:'')}}}}); $('#curTag').textContent = c }

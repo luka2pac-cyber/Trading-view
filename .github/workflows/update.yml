@@ -11,14 +11,14 @@ permissions:
   contents: write
   pages: write
   id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
+  actions: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    concurrency:
+      group: pages-build
+      cancel-in-progress: false
     environment: github-pages
     steps:
       - uses: actions/checkout@v4
@@ -45,9 +45,27 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+  # GitHub "schedule" zažene robota samo nekajkrat na dan (preverjeno: 5 zagonov v 2 dneh).
+  # Zato vsak zagon po ~11 min sproži naslednjega (workflow_dispatch). Teče naprej samo najnovejša veriga.
+  next:
+    needs: deploy
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 660
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          newer=$(gh api "repos/${{ github.repository }}/actions/workflows/update.yml/runs?per_page=30" \
+            --jq '[.workflow_runs[] | select(.id > ${{ github.run_id }} and (.status=="queued" or .status=="in_progress" or .status=="waiting" or .status=="pending"))] | length')
+          echo "novejših aktivnih zagonov: $newer"
+          if [ "$newer" = "0" ]; then gh workflow run update.yml --repo "${{ github.repository }}" --ref main; echo "sprožen naslednji zagon"; fi
