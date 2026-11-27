@@ -254,6 +254,31 @@ def extended(tickers):
     return out
 
 
+def quote_ext(tickers):
+    """Pre/post cena iz Yahoo quote (preMarketPrice/postMarketPrice). Sveče 5m včasih zamujajo
+    (preverjeno 27. 11. 2026: chart brez današnjega premarketa, quote pa SPY pre 729.53 kot TV)."""
+    out = {}
+    for t in tickers:
+        try:
+            i = yf.Ticker(t).info or {}
+        except Exception as e:  # noqa
+            print(f"  ! quote {t}: {e}")
+            continue
+        reg_t, reg_p = i.get("regularMarketTime") or 0, i.get("regularMarketPrice")
+        cand = []
+        if i.get("preMarketPrice") and (i.get("preMarketTime") or 0) > reg_t:
+            cand.append(("pre", i["preMarketPrice"], i["preMarketTime"]))
+        if i.get("postMarketPrice") and (i.get("postMarketTime") or 0) > reg_t:
+            cand.append(("post", i["postMarketPrice"], i["postMarketTime"]))
+        if not cand or not reg_p:
+            continue
+        sess, p, ts = max(cand, key=lambda x: x[2])
+        out[t] = {"s": sess, "p": rnd(float(p)), "chg": rnd((float(p) / float(reg_p) - 1) * 100), "base": rnd(float(reg_p)),
+                  "t": int(ts) * 1000, "src": "quote"}
+        time.sleep(0.2)
+    return out
+
+
 def main():
     groups = json.load(open(os.path.join(ROOT, "watchlist.json"), encoding="utf-8"))
     items = [it for g in groups for it in g["items"] if it.get("src", "yahoo") == "yahoo"]
@@ -272,6 +297,14 @@ def main():
 
     try:
         ext = extended([t for t in want if US_RE.match(t)])
+        try:
+            q = quote_ext([t for t in want if US_RE.match(t)])
+            for t, v in q.items():  # novejša cena zmaga
+                if t not in ext or v["t"] > ext[t]["t"]:
+                    ext[t] = v
+            print("Pre/post (quote):", {k: (v["s"], v["p"]) for k, v in q.items()})
+        except Exception as e:  # noqa
+            print("  ! quote napaka:", e)
         print("Pre/post:", {k: (v["s"], v["p"]) for k, v in ext.items()})
     except Exception as e:  # noqa
         print("  ! pre/post napaka:", e); ext = {}
