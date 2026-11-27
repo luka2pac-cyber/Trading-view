@@ -11,4 +11,4 @@ jobs:
         with: {python-version: "3.12"}
       - run: pip install websockets yfinance
       - run: bash diag/drb2.sh; python diag/drb.py || true
-      - run: python diag/yh.py
+      - run: bash diag/fx.sh
